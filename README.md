@@ -8,10 +8,10 @@ TODO：概述
 实现工具：4 cloud machines，Zookeeper，Kafka， Spark，MySQL
 
 ## TODO
-- [x] 配置完成zookeeper + kafka + spark streaming
-- [x] 用spark streaming消费kafka的topic数据
-- [x] 使用zookeeper存储并写入汇率数据
-- [x] 使用mysql存储持久化数据
+-  ~~配置完成zookeeper + kafka + spark streaming~~
+-  ~~用spark streaming消费kafka的topic数据~~
+-  ~~使用zookeeper存储并写入汇率数据~~
+-  ~~使用mysql存储持久化数据~~
 -  通过zookeeper实现访问商品信息前加锁
 -  生成随机订单数据文件
 -  通过http sender发送订单数据
