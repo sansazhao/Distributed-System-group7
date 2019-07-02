@@ -12,15 +12,15 @@ TODO：概述
 - [x] 用spark streaming消费kafka的topic数据
 - [x] 使用zookeeper存储并写入汇率数据
 - [x] 使用mysql存储持久化数据
-- [] 通过zookeeper实现访问商品信息前加锁
-- [] 生成随机订单数据文件
-- [] 通过http sender发送订单数据
-- [] 在单机系统下完成订单处理
-- [] **在分布式系统下完成订单处理 (完成基本任务)**
-- [] 使用spark streaming的Direct API方式与kafka连接
-- [] 采用分布式的文件系统(eg. hdfs)
-- [] 采用分布式的Mysql(通过zookeeper管理)
-- [] 使用不同的spark集群配置(eg. yarn mesos k8s)
+-  通过zookeeper实现访问商品信息前加锁
+-  生成随机订单数据文件
+-  通过http sender发送订单数据
+-  在单机系统下完成订单处理
+-  **在分布式系统下完成订单处理 (完成基本任务)**
+-  使用spark streaming的Direct API方式与kafka连接
+-  采用分布式的文件系统(eg. hdfs)
+-  采用分布式的Mysql(通过zookeeper管理)
+-  使用不同的spark集群配置(eg. yarn mesos k8s)
 
 
 
