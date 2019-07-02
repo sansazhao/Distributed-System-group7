@@ -73,14 +73,7 @@ ln -s spark xxx
 
 ### 2.4 安装Hadoop(optional)
 
-<<<<<<< HEAD
-## Q & A
-** Q: kafka-console-consumer.sh --zookeeper xxx 报错 **
 
-A: 因为版本更新该参数改为--bootstrap-server，需要broker server而不是zookeeper server
-
-** Q: kafka-console-consumer.sh --zookeeper xxx 报错 **
-=======
 ### 2.5 配置Mysql
 
 选择使用第四台机器作为数据库服务器，本地配置mysql
@@ -141,7 +134,7 @@ A: 因为版本更新该参数改为--bootstrap-server，需要broker server而�
 
 
 
-## 4. Problems 
+## 4. Problems
 
 **Q: kafka-console-consumer.sh --zookeeper xxx 报错**
 
@@ -164,4 +157,3 @@ A: 因为版本更新该参数改为--bootstrap-server，需要broker server而�
 | 516030910219 | 徐家辉 |      |
 | 516030910422 | 赵樱   |      |
 | 516030910367 | 应邦豪 |      |
-
