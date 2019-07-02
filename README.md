@@ -58,6 +58,31 @@ spark与hadoop的关系
 
 ### 2.4 安装Hadoop(optional)
 
+### 2.5 配置Mysql
+
+选择使用第四台机器作为数据库服务器，本地配置mysql
+
+``` shell
+# 下载mysql的repo源
+> wget http://repo.mysql.com/mysql-community-release-el7-5.noarch.rpm
+
+# 安装mysql-community-release-el7-5.noarch.rpm包
+> sudo rpm -ivh mysql-community-release-el7-5.noarch.rpm
+
+# 安装mysql，并按照命令行提示设置密码
+> sudo apt-get install mysql-server
+
+# 登录mysql
+> mysql -u root -p
+
+# 输入密码，假设密码为123456
+> 123456
+
+# 成功进入数据库，完成配置。
+```
+
+运行master.jar，可启动服务器。
+
 ## Q & A
 ** Q: kafka-console-consumer.sh --zookeeper xxx 报错**
 
