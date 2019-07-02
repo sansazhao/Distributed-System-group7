@@ -1,10 +1,17 @@
 # Distributed-System-group7
-an order system cluster  deployed with zookeeper&amp;kafka&amp;spark&amp;mysql on 4 cloud machines
+TODO：概述
+
+> 背景：假设有一个热门的国际购物平台，它需要处理高并发的购物订单。因为它是为世界各地的用户设计，它应该能够支持不同的货币结算。当用户购买商品时，系统会根据当前汇率将原价格兑换成目标货币的价格。
+
+实验目的：设计并实现一个分布式交易结算系统，接收和处理贸易订单，并记录所有交易结果和总交易金额。
+
+实现工具：4 cloud machines，Zookeeper，Kafka， Spark，MySQL
 
 ## 1 System Environment
 - centos
 - 8GB DRAM
 - 4-core CPU
+- **TODO：集群分配的职能与示意图** 
 
 ## 2 Install and Configuration
 首先需要下载Zookeeper, Kafka, Spark等各种包，因此需要先安装wget指令
@@ -83,11 +90,61 @@ spark与hadoop的关系
 
 运行master.jar，可启动服务器。
 
-## Q & A
-** Q: kafka-console-consumer.sh --zookeeper xxx 报错**
+
+
+2.6 docker?
+
+```shell
+> sudo apt-get install libcurl3-gnutls=7.47.0-1ubuntu2
+> sudo apt-get install curl
+```
+
+
+
+
+
+## 3. Program Design
+
+### 3.1 测试数据与testfile
+
+### 3.2 Zookeeper事务管理
+
+- 分布式锁的实现
+
+- zookeeper存储汇率表，定义4个并行的threads对应4种货币，每分钟修改1次货币汇率。
+
+### 3.3 Kafka缓存order flow
+
+3.4 Spark Streaming计算
+
+3.5 MySQL存储数据与结果
+
+3.6 优化latency与throughput
+
+
+
+
+
+## 4. Problems 
+
+**Q: kafka-console-consumer.sh --zookeeper xxx 报错**
 
 A: 因为版本更新该参数改为--bootstrap-server，需要broker server而不是zookeeper server
 
-** Q: kafka-console-consumer.sh --zookeeper xxx 报错**
+**Q: kafka-console-consumer.sh --zookeeper xxx 报错**
 
 A: 因为版本更新该参数改为--bootstrap-server，需要broker server而不是zookeeper server
+
+
+
+
+
+## 5. Contribution
+
+| 学号         | 姓名   | 分工 |
+| ------------ | ------ | ---- |
+| 516030910328 | 蔡忠玮 |      |
+| 516030910219 | 徐家辉 |      |
+| 516030910422 | 赵樱   |      |
+| 516030910367 | 应邦豪 |      |
+
