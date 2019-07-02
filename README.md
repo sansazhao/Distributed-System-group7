@@ -56,13 +56,21 @@ ln -s kafka xxx
 spark与hadoop的关系
 - spark使用hdfs作为分布式的文件系统，而在local或者standalone模式下不需要hdfs，因此不需要先安装hadoop
 
+``` shell
+wget xxx
+tar zxvf xxx.tgz -C ~/soft
+cd ~/soft
+ln -s spark xxx
+```
+
+
 ### 2.4 安装Hadoop(optional)
 
 ## Q & A
-** Q: kafka-console-consumer.sh --zookeeper xxx 报错**
+** Q: kafka-console-consumer.sh --zookeeper xxx 报错 **
 
 A: 因为版本更新该参数改为--bootstrap-server，需要broker server而不是zookeeper server
 
-** Q: kafka-console-consumer.sh --zookeeper xxx 报错**
+** Q: kafka-console-consumer.sh --zookeeper xxx 报错 **
 
 A: 因为版本更新该参数改为--bootstrap-server，需要broker server而不是zookeeper server
