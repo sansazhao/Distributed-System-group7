@@ -8,6 +8,7 @@ import java.util.List;
 
 public class CommodityService {
     public static Commodity getCommodity(int id) {
+        //System.out.println(id);
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         Transaction tx = session.beginTransaction();
         List<Commodity> commodities = (List<Commodity>) session
