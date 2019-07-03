@@ -2,7 +2,7 @@ FROM openjdk:8
 VOLUME /tmp
 ADD ./target/app-0.0.1-SNAPSHOT.jar app.jar
 RUN sh -c 'touch /app.jar'
-RUN yum install -y mysql-server mysql  
+RUN apt install mysql-server mysql  
 RUN /etc/init.d/mysqld start &&\  
     mysql -e "grant all privileges on *.* to 'root'@'%' identified by '';"&&\  
     mysql -e "grant all privileges on *.* to 'root'@'localhost' identified by '';"&&\  
