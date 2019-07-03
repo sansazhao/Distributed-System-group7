@@ -7,29 +7,11 @@ TODO：概述
 
 实现工具：4 cloud machines，Zookeeper，Kafka， Spark，MySQL
 
-## TODO
--  ~~配置完成zookeeper + kafka + spark streaming~~
--  ~~用spark streaming消费kafka的topic数据~~
--  ~~使用zookeeper存储并写入汇率数据~~
--  ~~使用mysql存储持久化数据~~
--  通过zookeeper实现访问商品信息前加锁
--  生成随机订单数据文件
--  通过http sender发送订单数据
--  启动并行单元实时更改汇率数据
--  在单机系统下完成订单处理
--  **在分布式系统下完成订单处理 (完成基本任务)**
--  使用spark streaming的Direct API方式与kafka连接
--  采用分布式的文件系统(eg. hdfs)
--  采用分布式的Mysql(通过zookeeper管理)
--  使用不同的spark集群配置(eg. yarn mesos k8s)
-
-
-
 ## 1 System Environment
 - centos
 - 8GB DRAM
 - 4-core CPU
-- **TODO：集群分配的职能与示意图**
+- **TODO：集群分配的职能与示意图** 
 
 ## 2 Install and Configuration
 首先需要下载Zookeeper, Kafka, Spark等各种包，因此需要先安装wget指令
@@ -81,16 +63,7 @@ ln -s kafka xxx
 spark与hadoop的关系
 - spark使用hdfs作为分布式的文件系统，而在local或者standalone模式下不需要hdfs，因此不需要先安装hadoop
 
-``` shell
-wget xxx
-tar zxvf xxx.tgz -C ~/soft
-cd ~/soft
-ln -s spark xxx
-```
-
-
 ### 2.4 安装Hadoop(optional)
-
 
 ### 2.5 配置Mysql
 
@@ -104,10 +77,10 @@ ln -s spark xxx
 > sudo rpm -ivh mysql-community-release-el7-5.noarch.rpm
 
 # 安装mysql，并按照命令行提示设置密码
-> sudo apt-get install mysql-server
+> sudo yum install mysql-server -y
 
 # 登录mysql
-> mysql -u root -p123456
+> mysql -u root -p
 
 # 创建数据库lab5和表格commodity, result
 create database lab5;
@@ -118,7 +91,7 @@ create table commodity(
   currency  VARCHAR(5)  NULL,
   inventory INT         NULL) ENGINE = InnoDB;
 
-create TABLE result(
+create table result(
   id        INT AUTO_INCREMENT PRIMARY KEY,
   user_id   INT        NULL,
   initiator VARCHAR(5) NULL,
@@ -164,7 +137,7 @@ create TABLE result(
 
 
 
-## 4. Problems
+## 4. Problems 
 
 **Q: kafka-console-consumer.sh --zookeeper xxx 报错**
 
@@ -186,3 +159,4 @@ A: 因为版本更新该参数改为--bootstrap-server，需要broker server而�
 | 516030910219 | 徐家辉 |      |
 | 516030910422 | 赵樱   |      |
 | 516030910367 | 应邦豪 |      |
+
