@@ -1,4 +1,4 @@
-FROM frolvlad/alpine-oraclejdk8:slim
+FROM openjdk:8
 VOLUME /tmp
 ADD lab5/target/dsgroup7-1.0-SNAPSHOT.jar app.jar
 EXPOSE 8081
