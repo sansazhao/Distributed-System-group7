@@ -17,13 +17,13 @@ before_install:
 install:
 - mvn install -DskipTests=true -Dmaven.javadoc.skip=true
 
-addons:
-  apt:
-    sources:
-      - mysql-5.7-trusty
-    packages:
-      - mysql-server
-      - mysql-client
+# addons:
+#   apt:
+#     sources:
+#       - mysql-5.7-trusty
+#     packages:
+#       - mysql-server
+#       - mysql-client
 
 script:
 - mvn package
