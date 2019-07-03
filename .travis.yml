@@ -11,8 +11,22 @@ before_install:
 - cd lab5
 - mysql -e 'CREATE DATABASE IF NOT EXISTS lab5;'
 - sudo mysql -e "use mysql; update user set authentication_string=PASSWORD('new_password') where User='root'; update user set plugin='mysql_native_password';FLUSH PRIVILEGES;"
-- sudo mysql_upgrade -u root -123456
+- sudo mysql_upgrade -u root -p
+- 123456
 - sudo service mysql restart
+- CREATE TABLE commodity(
+  id        INT         NOT NULL PRIMARY KEY,
+  name      VARCHAR(11) NULL,
+  price     DOUBLE      NULL,
+  currency  VARCHAR(5)  NULL,
+  inventory INT         NULL) ENGINE = InnoDB;
+
+- CREATE TABLE result(
+  id        INT AUTO_INCREMENT PRIMARY KEY,
+  user_id   INT        NULL,
+  initiator VARCHAR(5) NULL,
+  success   VARCHAR(5) NULL,
+  paid      DOUBLE     NULL) ENGINE = InnoDB;
 
 install:
 - mvn install -DskipTests=true -Dmaven.javadoc.skip=true
