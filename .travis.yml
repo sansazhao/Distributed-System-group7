@@ -1,12 +1,16 @@
 language: java
 
+jdk:
+  - openjdk8
 services:
 - docker
 
-# before_install:
-# - chmod +x mvnw
-
+before_install:
+- cd lab5
+install:
+- mvn install -DskipTests=true -Dmaven.javadoc.skip=true
 script:
+- mvn package
 - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_NAME" --password-stdin
 - docker build -t ying98/ds_group7 .
 - docker push ying98/ds_group7:latest
