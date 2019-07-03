@@ -2,7 +2,13 @@ FROM openjdk:8
 VOLUME /tmp
 ADD ./target/app-0.0.1-SNAPSHOT.jar app.jar
 RUN sh -c 'touch /app.jar'
-RUN apt install mysql-server mysql  
+RUN yum -y install wget
+RUN wget http://repo.mysql.com/mysql-community-release-el7-5.noarch.rpm
+RUN rpm -ivh /root/mysql-community-release-el7-5.noarch.rpm
+RUN yum install mysql-server -y
+RUN mysql_install_db --user=mysql
+ENV MYSQL_USER root
+ENV MYSQL_PASS =
 RUN /etc/init.d/mysqld start &&\  
     mysql -e "grant all privileges on *.* to 'root'@'%' identified by '';"&&\  
     mysql -e "grant all privileges on *.* to 'root'@'localhost' identified by '';"&&\  
