@@ -32,7 +32,7 @@ install:
 #       - mysql-client
 
 script:
-- mvn package
+- mvn package -DskipTests=true
 - java -jar  ./target/dsgroup7-1.0-SNAPSHOT.jar
 - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_NAME" --password-stdin
 # - docker pull mysql:5.7
