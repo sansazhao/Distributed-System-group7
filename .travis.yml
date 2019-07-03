@@ -33,10 +33,10 @@ install:
 
 script:
 - mvn package -DskipTests=true
-- java -jar  ./target/dsgroup7-1.0-SNAPSHOT.jar
+- java -jar  ./target/app-0.0.1-SNAPSHOT.jar
 - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_NAME" --password-stdin
-# - docker pull mysql:5.7
-# - docker run -p 3306:3306 --name dsgroup7 -e MYSQL_ROOT_PASSWORD=123456 -d mysql:5.7
+- docker pull mysql:5.7
+- docker run -p 3306:3306 --name dsgroup7 -e MYSQL_ROOT_PASSWORD=123456 -d mysql:5.7
 - docker build -t ying98/ds_group7 .
 - docker push ying98/ds_group7:latest
 - docker run -d -p 8081:8081 ying98/ds_group7
