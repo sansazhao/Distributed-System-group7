@@ -107,24 +107,18 @@ ln -s spark xxx
 > sudo apt-get install mysql-server
 
 # 登录mysql
-> mysql -u root -p
-
-# 输入密码，假设密码为123456
-> 123456
-
-# 登录mysql，并输入密码
-> mysql -u root -p
+> mysql -u root -p123456
 
 # 创建数据库lab5和表格commodity, result
-CREATE database lab5;
-CREATE TABLE commodity(
+create database lab5;
+create table commodity(
   id        INT         NOT NULL PRIMARY KEY,
   name      VARCHAR(11) NULL,
   price     DOUBLE      NULL,
   currency  VARCHAR(5)  NULL,
   inventory INT         NULL) ENGINE = InnoDB;
 
-CREATE TABLE result(
+create TABLE result(
   id        INT AUTO_INCREMENT PRIMARY KEY,
   user_id   INT        NULL,
   initiator VARCHAR(5) NULL,
@@ -137,7 +131,7 @@ CREATE TABLE result(
 
 
 
-2.6 docker?
+2.6 ???
 
 ```shell
 > sudo apt-get install libcurl3-gnutls=7.47.0-1ubuntu2
