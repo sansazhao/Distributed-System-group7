@@ -10,10 +10,10 @@ services:
 before_install:
 - cd lab5
 - mysql -e 'CREATE DATABASE IF NOT EXISTS lab5;'
-- sudo mysql -e "use mysql; update user set authentication_string=PASSWORD('123456') where User='root'; FLUSH PRIVILEGES;"
+# - sudo mysql -e "use mysql; update user set authentication_string=PASSWORD('123456') where User='root'; FLUSH PRIVILEGES;"
 # - sudo mysql_upgrade -u root -p123456
-- sudo service mysql restart
-- sudo mysql -u root -p123456
+# - sudo service mysql restart
+# - sudo mysql -u root -p123456
 - CREATE TABLE commodity(
   id        INT         NOT NULL PRIMARY KEY,
   name      VARCHAR(11) NULL,
