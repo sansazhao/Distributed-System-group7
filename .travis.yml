@@ -1,18 +1,35 @@
 language: java
 
 jdk:
-  - openjdk8
+- openjdk8
+
 services:
-- docker
+# - docker
+- mysql
 
 before_install:
 - cd lab5
+- mysql -e 'CREATE DATABASE IF NOT EXISTS lab5;'
+- sudo mysql -e "use mysql; update user set authentication_string=PASSWORD('new_password') where User='root'; update user set plugin='mysql_native_password';FLUSH PRIVILEGES;"
+- sudo mysql_upgrade -u root -123456
+- sudo service mysql restart
+
 install:
 - mvn install -DskipTests=true -Dmaven.javadoc.skip=true
+
+addons:
+  apt:
+    sources:
+      - mysql-5.7-trusty
+    packages:
+      - mysql-server
+      - mysql-client
+
 script:
 - mvn package
-- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_NAME" --password-stdin
-- docker build -t ying98/ds_group7 .
-- docker push ying98/ds_group7:latest
-- docker run -d -p 8081:8081 ying98/ds_group7
-- docker ps -a
+- java -jar  ./target/dsgroup7-1.0-SNAPSHOT.jar
+# - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_NAME" --password-stdin
+# - docker build -t ying98/ds_group7 .
+# - docker push ying98/ds_group7:latest
+# - docker run -d -p 8081:8081 ying98/ds_group7
+# - docker ps -a
