@@ -115,11 +115,11 @@ spark与hadoop的关系
 
 ### 3.3 Kafka缓存order flow
 
-3.4 Spark Streaming计算
+### 3.4 Spark Streaming计算
 
-3.5 MySQL存储数据与结果
+### 3.5 MySQL存储数据与结果
 
-3.6 优化latency与throughput
+### 3.6 优化latency与throughput
 
 
 
