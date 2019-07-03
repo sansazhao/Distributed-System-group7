@@ -77,10 +77,10 @@ spark与hadoop的关系
 > sudo rpm -ivh mysql-community-release-el7-5.noarch.rpm
 
 # 安装mysql，并按照命令行提示设置密码
-> sudo apt-get install mysql-server
+> sudo yum install mysql-server -y
 
 # 登录mysql
-> mysql -u root -p123456
+> mysql -u root -p
 
 # 创建数据库lab5和表格commodity, result
 create database lab5;
@@ -91,7 +91,7 @@ create table commodity(
   currency  VARCHAR(5)  NULL,
   inventory INT         NULL) ENGINE = InnoDB;
 
-create TABLE result(
+create table result(
   id        INT AUTO_INCREMENT PRIMARY KEY,
   user_id   INT        NULL,
   initiator VARCHAR(5) NULL,
