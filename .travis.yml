@@ -1,0 +1,14 @@
+language: java
+
+services:
+- docker
+
+before_install:
+- chmod +x mvnw
+
+script:
+- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_NAME" --password-stdin
+- docker build -t ying98/ds_group7 .
+- docker push ying98/ds_group7:latest
+- docker run -d -p 8081:8081 ying98/ds_group7
+- docker ps -a
