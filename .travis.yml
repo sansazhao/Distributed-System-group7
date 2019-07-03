@@ -4,19 +4,20 @@ jdk:
 - openjdk8
 
 services:
-# - docker
+- docker
 - mysql
+
+sudo: required
 
 before_install:
 - cd lab5
-- mysql -e 'CREATE DATABASE IF NOT EXISTS lab5;'
-# - sudo mysql -e "use mysql; update user set authentication_string=PASSWORD('123456') where User='root'; FLUSH PRIVILEGES;"
-# - sudo mysql_upgrade -u root -p123456
+- mysql -e 'create database lab5;'
+- sudo mysql -e "use mysql; update user set authentication_string=PASSWORD('123456') where User='root'; FLUSH PRIVILEGES;"
+# # - sudo mysql_upgrade -u root -p123456
 # - sudo service mysql restart
 # - sudo mysql -u root -p123456
-- CREATE TABLE commodity(id INT NOT NULL PRIMARY KEY, name VARCHAR(11) NULL,price DOUBLE NULL,currency  VARCHAR(5)  NULL,inventory INT NULL) ENGINE = InnoDB;
-
-- CREATE TABLE result(id INT AUTO_INCREMENT PRIMARY KEY,user_id INT NULL,initiator VARCHAR(5) NULL,success VARCHAR(5) NULL,paid DOUBLE NULL) ENGINE = InnoDB;
+- sudo mysql -e "CREATE TABLE commodity(id INT NOT NULL PRIMARY KEY, name VARCHAR(11) NULL,price DOUBLE NULL,currency  VARCHAR(5)  NULL,inventory INT NULL) ENGINE = InnoDB;"
+- sudo mysql -e "CREATE TABLE result(id INT AUTO_INCREMENT PRIMARY KEY,user_id INT NULL,initiator VARCHAR(5) NULL,success VARCHAR(5) NULL,paid DOUBLE NULL) ENGINE = InnoDB;"
 
 install:
 - mvn install -DskipTests=true -Dmaven.javadoc.skip=true
@@ -32,8 +33,10 @@ install:
 script:
 - mvn package
 - java -jar  ./target/dsgroup7-1.0-SNAPSHOT.jar
-# - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_NAME" --password-stdin
-# - docker build -t ying98/ds_group7 .
-# - docker push ying98/ds_group7:latest
-# - docker run -d -p 8081:8081 ying98/ds_group7
-# - docker ps -a
+- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_NAME" --password-stdin
+# - docker pull mysql:5.7
+# - docker run -p 3306:3306 --name dsgroup7 -e MYSQL_ROOT_PASSWORD=123456 -d mysql:5.7
+- docker build -t ying98/ds_group7 .
+- docker push ying98/ds_group7:latest
+- docker run -d -p 8081:8081 ying98/ds_group7
+- docker ps -a
