@@ -3,8 +3,8 @@ language: java
 services:
 - docker
 
-before_install:
-- chmod +x mvnw
+# before_install:
+# - chmod +x mvnw
 
 script:
 - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_NAME" --password-stdin
