@@ -112,7 +112,25 @@ ln -s spark xxx
 # 输入密码，假设密码为123456
 > 123456
 
-# 成功进入数据库，完成配置。
+# 登录mysql，并输入密码
+> mysql -u root -p
+
+# 创建数据库lab5和表格commodity, result
+CREATE database lab5;
+CREATE TABLE commodity(
+  id        INT         NOT NULL PRIMARY KEY,
+  name      VARCHAR(11) NULL,
+  price     DOUBLE      NULL,
+  currency  VARCHAR(5)  NULL,
+  inventory INT         NULL) ENGINE = InnoDB;
+
+CREATE TABLE result(
+  id        INT AUTO_INCREMENT PRIMARY KEY,
+  user_id   INT        NULL,
+  initiator VARCHAR(5) NULL,
+  success   VARCHAR(5) NULL,
+  paid      DOUBLE     NULL) ENGINE = InnoDB;
+
 ```
 
 运行master.jar，可启动服务器。
