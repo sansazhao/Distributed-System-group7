@@ -14,19 +14,9 @@ before_install:
 # - sudo mysql_upgrade -u root -p123456
 # - sudo service mysql restart
 # - sudo mysql -u root -p123456
-- CREATE TABLE commodity(
-  id        INT         NOT NULL PRIMARY KEY,
-  name      VARCHAR(11) NULL,
-  price     DOUBLE      NULL,
-  currency  VARCHAR(5)  NULL,
-  inventory INT         NULL) ENGINE = InnoDB;
+- CREATE TABLE commodity(id INT NOT NULL PRIMARY KEY, name VARCHAR(11) NULL,price DOUBLE NULL,currency  VARCHAR(5)  NULL,inventory INT NULL) ENGINE = InnoDB;
 
-- CREATE TABLE result(
-  id        INT AUTO_INCREMENT PRIMARY KEY,
-  user_id   INT        NULL,
-  initiator VARCHAR(5) NULL,
-  success   VARCHAR(5) NULL,
-  paid      DOUBLE     NULL) ENGINE = InnoDB;
+- CREATE TABLE result(id INT AUTO_INCREMENT PRIMARY KEY,user_id INT NULL,initiator VARCHAR(5) NULL,success VARCHAR(5) NULL,paid DOUBLE NULL) ENGINE = InnoDB;
 
 install:
 - mvn install -DskipTests=true -Dmaven.javadoc.skip=true
