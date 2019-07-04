@@ -1,6 +1,8 @@
 package org;
 
 
+import Core.Current;
+import Core.LockService;
 import org.apache.spark.*;
 import org.apache.spark.streaming.*;
 import org.apache.spark.streaming.dstream.*;
@@ -17,13 +19,23 @@ import org.apache.spark.api.java.JavaSparkContext;
 import scala.Tuple2;
 import java.util.Arrays;
 import java.util.regex.Pattern;
+import org.OrderProcessor;
+
 
 public class App{
+
+    static void init(){
+        OrderProcessor.init();
+        Current.connectZookeeper();
+        LockService.init();
+    }
+
     public static void main(String args[])throws Exception {
         System.out.println("hello world");
 
         SparkConf conf = new SparkConf().setAppName("NetworkWordCount").setMaster("local[2]");
 
+        init();
 
         JavaSparkContext sc = new JavaSparkContext(conf);
         sc.setLogLevel("WARN");
@@ -36,11 +48,12 @@ public class App{
 
         JavaDStream<String> lines = messages.map(Tuple2::_2);
 
-        JavaDStream<String> words = lines.flatMap(x -> Arrays.asList(Pattern.compile(" ").split(x)).iterator());
-
-        JavaPairDStream<String, Integer> wordCounts = words.mapToPair(s -> new Tuple2<>(s, 1)).reduceByKey((i1, i2) -> (i1 + i2));
+        //JavaDStream<String> words = lines.flatMap(x -> Arrays.asList(Pattern.compile(" ").split(x)).iterator());
+        JavaDStream<String> results = lines.map(OrderProcessor::process);
+        //JavaPairDStream<String, Integer> wordCounts = words.mapToPair(s -> new Tuple2<>(s, 1)).reduceByKey((i1, i2) -> (i1 + i2));
         System.out.println("test");
-        wordCounts.print();
+        results.print();
+        //wordCounts.print();
         jssc.start();
 
         jssc.awaitTermination();

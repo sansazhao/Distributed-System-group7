@@ -21,7 +21,7 @@ public class OrderProducer{
         JSONObject object = new JSONObject();
         //string
         object.put("user_id",123);
-        object.put("initiator","RMB");
+        object.put("initiator","USD");
         object.put("time",155);
         JSONObject item = new JSONObject();
         item.put("id","1");
@@ -43,7 +43,7 @@ public class OrderProducer{
         properties.put("request.require.acks","1");
         ProducerConfig config=new ProducerConfig(properties);
         producer=new Producer<>(config);
-        //Processer p = new Processer();
+        //Processor p = new Processor();
         while(true){
             String message = order();
             producer.send(new KeyedMessage<>("kafka_spark",message));
