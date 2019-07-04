@@ -21,7 +21,7 @@ TODO：概述
 -  通过zookeeper实现total transaction num的查询
 -  启动并行单元实时更改汇率数据
 -  ~~在单机系统下完成订单处理~~
--  ~~ **在分布式系统下完成订单处理 (完成基本任务)** ~~
+-  **~~在分布式系统下完成订单处理 (完成基本任务)~~**
 -  使用spark streaming的Direct API方式与kafka连接
 -  采用分布式的文件系统(eg. hdfs)
 -  采用分布式的Mysql(通过zookeeper管理)
