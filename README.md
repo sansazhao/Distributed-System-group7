@@ -14,10 +14,13 @@ TODO：概述
 -  ~~使用mysql存储持久化数据~~
 -  通过zookeeper实现访问商品信息前加锁
 -  生成随机订单数据文件
+-  在应用开始时重置数据库
 -  通过http sender发送订单数据
+-  通过http receiver接受数据并发送给kafka
+-  通过zookeeper实现total transaction num的查询
 -  启动并行单元实时更改汇率数据
--  在单机系统下完成订单处理
--  **在分布式系统下完成订单处理 (完成基本任务)**
+-  ~~在单机系统下完成订单处理~~
+-  ~~ **在分布式系统下完成订单处理 (完成基本任务)** ~~
 -  使用spark streaming的Direct API方式与kafka连接
 -  采用分布式的文件系统(eg. hdfs)
 -  采用分布式的Mysql(通过zookeeper管理)
@@ -38,21 +41,31 @@ TODO：概述
 yum -y install wget
 ```
 
+配置四台虚拟机之间的域名映射
+/etc/hosts
+
+``` shell
+10.0.0.43   dist-1
+10.0.0.18   dist-2
+10.0.0.86   dist-3
+10.0.0.47   dist-4
+```
+
 ### 2.1 安装Zookeeper
 
 ``` shell
-wget
+wget https://mirrors.tuna.tsinghua.edu.cnlog4j/apache/zookeeper/zookeeper-3.4.14/zookeeper-3.4.14.tar.gz
 ```
-首先下载合适版本的包，这里选择了xxx
+首先下载合适版本的包，这里选择了zookeeper-3.4.14.tar.gz
 
 ``` shell
-tar zxvf xxx.tgz -C ~/soft
+tar zxvf zookeeper-3.4.14.tar.gz -C ~/soft
 ```
 解压至指定文件夹
 
 ``` shell
 cd ~/soft
-ln -s zk xxx
+ln -s zookeeper-3.4.14 zk
 ```
 创建软链接方便使用
 
@@ -63,18 +76,32 @@ cp zoo_sample.cfg zoo.cfg
 ```
 zoo_sample.cfg为里面自带的样例配置文件，这里直接采用它，需要修改一下
 ``` shell
-
+# ~/soft/zk/conf/zoo.cfg
+dataDir=/home/centos/zookeeper/data
+server.1=dist-1:2888:3888
+server.2=dist-2:2888:3888
+server.3=dist-3:2888:3888
 ```
 
 
 ### 2.2 安装Kafka
 
 ``` shell
-wget xxx
-tar zxvf xxx.tgz -C ~/soft
+wget http://mirrors.tuna.tsinghua.edu.cn/apache/kafka/2.2.1/kafka_2.11-2.2.1.tgz
+tar zxvf kafka_2.11-2.2.1.tgz -C ~/soft
 cd ~/soft
-ln -s kafka xxx
+ln -s kafka_2.11-2.2.1.tgz kafka
 ```
+修改配置文件
+
+``` shell
+# ~/soft/kafka/config/server.properties
+broker.id=0 # different in each node
+
+zookeeper.connect=dist-1:2181,dist-2:2181,dist-3:2181  #zookeeper config
+
+```
+
 
 
 ### 2.3 安装spark
@@ -82,11 +109,20 @@ spark与hadoop的关系
 - spark使用hdfs作为分布式的文件系统，而在local或者standalone模式下不需要hdfs，因此不需要先安装hadoop
 
 ``` shell
-wget xxx
-tar zxvf xxx.tgz -C ~/soft
+wget http://mirrors.tuna.tsinghua.edu.cn/apache/spark/spark-2.4.3/spark-2.4.3-bin-hadoop2.7.tgz
+tar zxvf spark-2.4.3-bin-hadoop2.7.tgz -C ~/soft
 cd ~/soft
-ln -s spark xxx
+ln -s spark-2.4.3-bin-hadoop2.7.tgz spark
 ```
+
+修改配置文件
+``` shell
+# ~/soft/spark/conf/slaves
+dist-1
+dist-2
+dist-3
+```
+在三台机器上都配置slaves文件
 
 
 ### 2.4 安装Hadoop(optional)
