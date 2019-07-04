@@ -7,6 +7,7 @@ TODO：概述
 
 实现工具：4 cloud machines，Zookeeper，Kafka， Spark，MySQL
 
+<<<<<<< HEAD
 ## TODO
 -  ~~配置完成zookeeper + kafka + spark streaming~~
 -  ~~用spark streaming消费kafka的topic数据~~
@@ -28,11 +29,13 @@ TODO：概述
 
 
 
+=======
+>>>>>>> 40435958c86fbf9b4e293133cbc6d3bf90a0f8dc
 ## 1 System Environment
 - centos
 - 8GB DRAM
 - 4-core CPU
-- **TODO：集群分配的职能与示意图**
+- **TODO：集群分配的职能与示意图** 
 
 ## 2 Install and Configuration
 首先需要下载Zookeeper, Kafka, Spark等各种包，因此需要先安装wget指令
@@ -108,6 +111,7 @@ zookeeper.connect=dist-1:2181,dist-2:2181,dist-3:2181  #zookeeper config
 spark与hadoop的关系
 - spark使用hdfs作为分布式的文件系统，而在local或者standalone模式下不需要hdfs，因此不需要先安装hadoop
 
+<<<<<<< HEAD
 ``` shell
 wget http://mirrors.tuna.tsinghua.edu.cn/apache/spark/spark-2.4.3/spark-2.4.3-bin-hadoop2.7.tgz
 tar zxvf spark-2.4.3-bin-hadoop2.7.tgz -C ~/soft
@@ -125,8 +129,9 @@ dist-3
 在三台机器上都配置slaves文件
 
 
+=======
+>>>>>>> 40435958c86fbf9b4e293133cbc6d3bf90a0f8dc
 ### 2.4 安装Hadoop(optional)
-
 
 ### 2.5 配置Mysql
 
@@ -140,22 +145,34 @@ dist-3
 > sudo rpm -ivh mysql-community-release-el7-5.noarch.rpm
 
 # 安装mysql，并按照命令行提示设置密码
-> sudo apt-get install mysql-server
+> sudo yum install mysql-server -y
 
 # 登录mysql
 > mysql -u root -p
 
-# 输入密码，假设密码为123456
-> 123456
+# 创建数据库lab5和表格commodity, result
+create database lab5;
+create table commodity(
+  id        INT         NOT NULL PRIMARY KEY,
+  name      VARCHAR(11) NULL,
+  price     DOUBLE      NULL,
+  currency  VARCHAR(5)  NULL,
+  inventory INT         NULL) ENGINE = InnoDB;
 
-# 成功进入数据库，完成配置。
+create table result(
+  id        INT AUTO_INCREMENT PRIMARY KEY,
+  user_id   INT        NULL,
+  initiator VARCHAR(5) NULL,
+  success   VARCHAR(5) NULL,
+  paid      DOUBLE     NULL) ENGINE = InnoDB;
+
 ```
 
 运行master.jar，可启动服务器。
 
 
 
-2.6 docker?
+2.6 ???
 
 ```shell
 > sudo apt-get install libcurl3-gnutls=7.47.0-1ubuntu2
@@ -178,17 +195,17 @@ dist-3
 
 ### 3.3 Kafka缓存order flow
 
-3.4 Spark Streaming计算
+### 3.4 Spark Streaming计算
 
-3.5 MySQL存储数据与结果
+### 3.5 MySQL存储数据与结果
 
-3.6 优化latency与throughput
-
-
+### 3.6 优化latency与throughput
 
 
 
-## 4. Problems
+
+
+## 4. Problems 
 
 **Q: kafka-console-consumer.sh --zookeeper xxx 报错**
 
@@ -210,3 +227,4 @@ A: 因为版本更新该参数改为--bootstrap-server，需要broker server而�
 | 516030910219 | 徐家辉 |      |
 | 516030910422 | 赵樱   |      |
 | 516030910367 | 应邦豪 |      |
+
