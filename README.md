@@ -7,7 +7,7 @@ TODO：概述
 
 实现工具：4 cloud machines，Zookeeper，Kafka， Spark，MySQL
 
-<<<<<<< HEAD
+
 ## TODO
 -  ~~配置完成zookeeper + kafka + spark streaming~~
 -  ~~用spark streaming消费kafka的topic数据~~
@@ -29,13 +29,12 @@ TODO：概述
 
 
 
-=======
->>>>>>> 40435958c86fbf9b4e293133cbc6d3bf90a0f8dc
+
 ## 1 System Environment
 - centos
 - 8GB DRAM
 - 4-core CPU
-- **TODO：集群分配的职能与示意图** 
+- **TODO：集群分配的职能与示意图**
 
 ## 2 Install and Configuration
 首先需要下载Zookeeper, Kafka, Spark等各种包，因此需要先安装wget指令
@@ -45,9 +44,9 @@ yum -y install wget
 ```
 
 配置四台虚拟机之间的域名映射
-/etc/hosts
 
 ``` shell
+# /etc/hosts
 10.0.0.43   dist-1
 10.0.0.18   dist-2
 10.0.0.86   dist-3
@@ -111,7 +110,7 @@ zookeeper.connect=dist-1:2181,dist-2:2181,dist-3:2181  #zookeeper config
 spark与hadoop的关系
 - spark使用hdfs作为分布式的文件系统，而在local或者standalone模式下不需要hdfs，因此不需要先安装hadoop
 
-<<<<<<< HEAD
+
 ``` shell
 wget http://mirrors.tuna.tsinghua.edu.cn/apache/spark/spark-2.4.3/spark-2.4.3-bin-hadoop2.7.tgz
 tar zxvf spark-2.4.3-bin-hadoop2.7.tgz -C ~/soft
@@ -129,8 +128,7 @@ dist-3
 在三台机器上都配置slaves文件
 
 
-=======
->>>>>>> 40435958c86fbf9b4e293133cbc6d3bf90a0f8dc
+
 ### 2.4 安装Hadoop(optional)
 
 ### 2.5 配置Mysql
@@ -205,7 +203,7 @@ create table result(
 
 
 
-## 4. Problems 
+## 4. Problems
 
 **Q: kafka-console-consumer.sh --zookeeper xxx 报错**
 
@@ -227,4 +225,3 @@ A: 因为版本更新该参数改为--bootstrap-server，需要broker server而�
 | 516030910219 | 徐家辉 |      |
 | 516030910422 | 赵樱   |      |
 | 516030910367 | 应邦豪 |      |
-
