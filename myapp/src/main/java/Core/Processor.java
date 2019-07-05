@@ -9,19 +9,17 @@ import Core.Current;
 import java.util.HashMap;
 import java.util.List;
 
-
-
 public class Processor {
 
     private HashMap<String, Double> rate = new HashMap<>();
 
     private Double getExchangeRate(String initiator) {
-        /*
-        if (initiator.equals("RMB")) return 2.0;
-        else if (initiator.equals("USD")) return 12.0;
-        else if (initiator.equals("JPY")) return 0.15;
-        else return 9.0;
-        */
+
+//        if (initiator.equals("RMB")) return 2.0;
+//        else if (initiator.equals("USD")) return 12.0;
+//        else if (initiator.equals("JPY")) return 0.15;
+//        else return 9.0;
+
         Double result;
         try {
             result = Current.getCurrentValue(initiator);
@@ -32,16 +30,8 @@ public class Processor {
         return  result;
     }
 
-    private void updateTotalTxAmount(String initiator, Double paid) {
-
-    }
-
     private void lock() {}
     private void unlock() {}
-
-    public void receive() {
-
-    }
 
     public JSONObject process(String in) {
         JSONObject order = JSONObject.parseObject(in);
@@ -50,13 +40,8 @@ public class Processor {
         long time = order.getLongValue("time");
         List<JSONObject> items = JSON.parseArray(order.getString("items"), JSONObject.class);
         double totalPrice = 0;
-//        System.out.println(user_id);
-//        System.out.println(initiator);
-//        System.out.println(time);
-//        System.out.println(order.getString("items"));
 
-        lock();
-        // ??
+//        lock();
         rate.put("RMB", getExchangeRate("RMB"));
         rate.put("USD", getExchangeRate("USD"));
         rate.put("JPY", getExchangeRate("JPY"));
@@ -92,19 +77,16 @@ public class Processor {
 
         }
 
-//        try {
-//            sleep(100000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-
         if (success) {
             for (int id : cache.keySet()) {
                 CommodityService.updateCommodity(cache.get(id));
-
+            }
+            try {
+                Current.updateTotalTxAmount(initiator, totalPrice);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
-            updateTotalTxAmount(initiator, totalPrice);
         }
         else {
             totalPrice = 0;
@@ -117,7 +99,7 @@ public class Processor {
         result.setPaid(totalPrice);
 
         ResultService.addResult(result);
-        unlock();
+//        unlock();
 
         return (JSONObject) JSONObject.toJSON(result);
     }

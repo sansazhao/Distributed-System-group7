@@ -26,6 +26,11 @@ public class Current {
             zookeeper.create("/current/USD", "12.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             zookeeper.create("/current/JPY", "0.15".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             zookeeper.create("/current/EUR", "9.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            zookeeper.create("/totalAmount", "for total transaction amount".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            zookeeper.create("/totalAmount/RMB", "0.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            zookeeper.create("/totalAmount/USD", "0.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            zookeeper.create("/totalAmount/JPY", "0.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            zookeeper.create("/totalAmount/EUR", "0.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             System.out.println("create ");
         } catch (IOException e) {
             e.printStackTrace();
@@ -47,5 +52,15 @@ public class Current {
         if(zookeeper == null) connectZookeeper();
         String valueString = new Double(value).toString();
         zookeeper.setData("/current/" + current, valueString.getBytes(), -1);
+    }
+
+    public static double updateTotalTxAmount(String current, double value) throws Exception {
+        if(zookeeper == null) connectZookeeper();
+        String curString = new String(zookeeper.getData("/totalAmount/" + current, false, null));
+        Double curDouble = Double.parseDouble(curString);
+        curDouble += value;
+        String valueString = curDouble.toString();
+        zookeeper.setData("/totalAmount/" + current, valueString.getBytes(), -1);
+        return curDouble;
     }
 }
