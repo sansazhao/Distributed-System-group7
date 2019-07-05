@@ -19,7 +19,7 @@ TODO：概述
 -  通过http sender发送订单数据
 -  通过http receiver接受数据并发送给kafka
 -  通过zookeeper实现total transaction num的查询
--  启动并行单元实时更改汇率数据
+-  ~~启动并行单元实时更改汇率数据~~
 -  ~~在单机系统下完成订单处理~~
 -  **~~在分布式系统下完成订单处理 (完成基本任务)~~**
 -  使用spark streaming的Direct API方式与kafka连接
