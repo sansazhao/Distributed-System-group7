@@ -54,6 +54,12 @@ public class Current {
         zookeeper.setData("/current/" + current, valueString.getBytes(), -1);
     }
 
+    public static double getTotalTxAmount(String current) throws Exception {
+        if(zookeeper == null) connectZookeeper();
+        String result = new String(zookeeper.getData("/totalAmount/" + current, false, null));
+        return Double.parseDouble(result);
+    }
+
     public static double updateTotalTxAmount(String current, double value) throws Exception {
         if(zookeeper == null) connectZookeeper();
         String curString = new String(zookeeper.getData("/totalAmount/" + current, false, null));
@@ -62,5 +68,13 @@ public class Current {
         String valueString = curDouble.toString();
         zookeeper.setData("/totalAmount/" + current, valueString.getBytes(), -1);
         return curDouble;
+    }
+
+    public static void initTotalTxAmount() throws Exception {
+        if(zookeeper == null) connectZookeeper();
+        zookeeper.setData("/totalAmount/RMB", "0.0".getBytes(), -1);
+        zookeeper.setData("/totalAmount/USD", "0.0".getBytes(), -1);
+        zookeeper.setData("/totalAmount/JPY", "0.0".getBytes(), -1);
+        zookeeper.setData("/totalAmount/EUR", "0.0".getBytes(), -1);
     }
 }
