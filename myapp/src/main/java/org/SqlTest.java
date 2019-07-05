@@ -18,6 +18,9 @@ public class SqlTest {
 
         ResultService.initResult();
         Processor processor = new Processor();
+        for (int i = 0; i < 10; i++) {
+            processor.process(in);
+        }
         JSONObject result = processor.process(in);
         System.out.println(result.toString());
 
