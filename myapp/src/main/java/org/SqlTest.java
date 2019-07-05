@@ -1,6 +1,7 @@
 package org;
 
 import Core.Processor;
+import Core.ResultService;
 import com.alibaba.fastjson.JSONObject;
 
 public class SqlTest {
@@ -14,6 +15,8 @@ public class SqlTest {
                 "{\"id\":\"3\",\"number\":1}" +
                 "]" +
                 "}";
+
+        ResultService.initResult();
         Processor processor = new Processor();
         JSONObject result = processor.process(in);
         System.out.println(result.toString());
