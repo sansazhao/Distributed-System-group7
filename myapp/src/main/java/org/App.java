@@ -33,7 +33,7 @@ public class App{
     public static void main(String args[])throws Exception {
         System.out.println("hello world");
 
-        SparkConf conf = new SparkConf().setAppName("NetworkWordCount").setMaster("local[2]");
+        SparkConf conf = new SparkConf().setAppName("Order Processing");
 
         init();
 
