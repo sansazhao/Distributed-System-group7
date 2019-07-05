@@ -63,4 +63,12 @@ public class Current {
         zookeeper.setData("/totalAmount/" + current, valueString.getBytes(), -1);
         return curDouble;
     }
+
+    public static void initTotalTxAmount() throws Exception {
+        if(zookeeper == null) connectZookeeper();
+        zookeeper.setData("/totalAmount/RMB", "0.0".getBytes(), -1);
+        zookeeper.setData("/totalAmount/USD", "0.0".getBytes(), -1);
+        zookeeper.setData("/totalAmount/JPY", "0.0".getBytes(), -1);
+        zookeeper.setData("/totalAmount/EUR", "0.0".getBytes(), -1);
+    }
 }
