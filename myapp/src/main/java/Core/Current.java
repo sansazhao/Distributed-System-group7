@@ -54,6 +54,12 @@ public class Current {
         zookeeper.setData("/current/" + current, valueString.getBytes(), -1);
     }
 
+    public static double getTotalTxAmount(String current) throws Exception {
+        if(zookeeper == null) connectZookeeper();
+        String result = new String(zookeeper.getData("/totalAmount/" + current, false, null));
+        return Double.parseDouble(result);
+    }
+
     public static double updateTotalTxAmount(String current, double value) throws Exception {
         if(zookeeper == null) connectZookeeper();
         String curString = new String(zookeeper.getData("/totalAmount/" + current, false, null));
