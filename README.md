@@ -14,8 +14,8 @@ TODO：概述
 -  ~~使用zookeeper存储并写入汇率数据~~
 -  ~~使用mysql存储持久化数据~~
 -  通过zookeeper实现访问商品信息前加锁
--  生成随机订单数据文件
--  在应用开始时重置数据库
+-  ~~生成随机订单数据文件~~
+-  ~~在应用开始时重置数据库~~
 -  通过http sender发送订单数据
 -  通过http receiver接受数据并发送给kafka
 -  通过zookeeper实现total transaction num的查询
