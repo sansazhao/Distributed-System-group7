@@ -209,9 +209,22 @@ create table result(
 
 A: 因为版本更新该参数改为--bootstrap-server，需要broker server而不是zookeeper server
 
-**Q: kafka-console-consumer.sh --zookeeper xxx 报错**
+**Q: zkServer.sh start后status显示not running**
 
-A: 因为版本更新该参数改为--bootstrap-server，需要broker server而不是zookeeper server
+A: 可查看zookeeper.out文件
+```
+org.apache.zookeeper.server.quorum.QuorumPeerConfig$ConfigException: Error processing /home/centos/soft/zk/bin/../conf/zoo.cfg
+        at org.apache.zookeeper.server.quorum.QuorumPeerConfig.parse(QuorumPeerConfig.java:156)
+        at org.apache.zookeeper.server.quorum.QuorumPeerMain.initializeAndRun(QuorumPeerMain.java:104)
+        at org.apache.zookeeper.server.quorum.QuorumPeerMain.main(QuorumPeerMain.java:81)
+Caused by: java.lang.IllegalArgumentException: /home/centos/zookeeper/data/myid file is missing
+        at org.apache.zookeeper.server.quorum.QuorumPeerConfig.parseProperties(QuorumPeerConfig.java:408)
+        at org.apache.zookeeper.server.quorum.QuorumPeerConfig.parse(QuorumPeerConfig.java:152)
+        ... 2 more
+
+```
+- 由于dataDir下的myid文件未创建
+- 若日志显示正常却status未显示，可能由于集群模式还未完成选举，等所有机器都启动后再查看
 
 
 
