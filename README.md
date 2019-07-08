@@ -34,14 +34,23 @@ TODO：概述
 ### 1.1 云服务器配置
 
 - centos
-- 8GB DRAM
-- 4-core CPU
+- 8GB DRAM * 4 
+- 4-core CPU * 4
 
 ### 1.2 集群预览
 
 - **TODO：集群分配的职能与示意图**
 
-  
+| 虚拟机         | zookeeper   | kafka |spark|
+| ------------- | ----------- | ----- |-----|
+| dist-1 		|  	✔		  |  ✔   |master|
+| dist-2 		| ✔ 		  | ✔    |slave|
+| dist-3 		| ✔   		  | ✔    |slave|
+| dist-4 		|  			  |  	  |	    |
+
+![zk&kafka.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/spark%26zk.png>)
+![spark&zk.png](https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/zk%26kafka.png)
+![spark.png](https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/spark.png)
 
 ## 2 Install and Configuration
 首先需要下载Zookeeper, Kafka, Spark等各种包，因此需要先安装wget指令
