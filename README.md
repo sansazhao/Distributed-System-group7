@@ -17,7 +17,7 @@ TODO：概述
 -  ~~生成随机订单数据文件~~
 -  ~~在应用开始时重置数据库~~
 -  通过http sender发送订单数据
--  通过http receiver接受数据并发送给kafka
+-  ~~通过http receiver接受数据并发送给kafka~~
 -  通过zookeeper实现total transaction num的查询
 -  ~~启动并行单元实时更改汇率数据~~
 -  ~~在单机系统下完成订单处理~~
@@ -225,6 +225,10 @@ Caused by: java.lang.IllegalArgumentException: /home/centos/zookeeper/data/myid 
 ```
 - 由于dataDir下的myid文件未创建
 - 若日志显示正常却status未显示，可能由于集群模式还未完成选举，等所有机器都启动后再查看
+
+**Q: Field "id" doesn't have a default value**
+
+A: 由于使用hibernete将Result表的id列设置为```@GeneratedValue(strategy = GenerationType.IDENTITY)```因此自增属性交由Mysql管理，而生产环境下的Mysql未配置id为AUTO INCREMENT，因此报错，通过```alter table Result modify id int AUTO INCREMENT;```修改完毕，需要保证连接数据库的进程关闭，否则会卡死
 
 
 
