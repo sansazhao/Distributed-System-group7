@@ -29,4 +29,24 @@ public class CommodityService {
         tx.commit();
         session.close();
     }
+
+    public static void insertCommodity(Commodity commodity) {
+        int id = commodity.getId();
+
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        Transaction tx = session.beginTransaction();
+        session.save(commodity);
+        tx.commit();
+        session.close();
+    }
+
+    public static void clearCommodity() {
+
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        Transaction tx = session.beginTransaction();
+        session.createQuery("delete from Commodity ").executeUpdate();
+        tx.commit();
+        session.close();
+    }
+
 }
