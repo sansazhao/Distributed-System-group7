@@ -31,10 +31,17 @@ TODO：概述
 
 
 ## 1 System Environment
+### 1.1 云服务器配置
+
 - centos
 - 8GB DRAM
 - 4-core CPU
+
+### 1.2 集群预览
+
 - **TODO：集群分配的职能与示意图**
+
+  
 
 ## 2 Install and Configuration
 首先需要下载Zookeeper, Kafka, Spark等各种包，因此需要先安装wget指令
@@ -170,13 +177,6 @@ create table result(
 
 
 
-2.6 ???
-
-```shell
-> sudo apt-get install libcurl3-gnutls=7.47.0-1ubuntu2
-> sudo apt-get install curl
-```
-
 
 
 
@@ -193,9 +193,13 @@ create table result(
 
 ### 3.3 Kafka缓存order flow
 
+![](C:\Users\sansazhao\Desktop\my_work\Distributed-System-group7\picture\zk&kafka.png)
+
 ### 3.4 Spark Streaming计算
 
 ### 3.5 MySQL存储数据与结果
+
+![](C:\Users\sansazhao\Desktop\my_work\Distributed-System-group7\picture\spark&zk.png)
 
 ### 3.6 优化latency与throughput
 
@@ -205,11 +209,13 @@ create table result(
 
 ## 4. Problems
 
-**Q: kafka-console-consumer.sh --zookeeper xxx 报错**
+**Q1: kafka-console-consumer.sh --zookeeper xxx 报错**
 
 A: 因为版本更新该参数改为--bootstrap-server，需要broker server而不是zookeeper server
 
-**Q: zkServer.sh start后status显示not running**
+
+
+**Q2: zkServer.sh start后status显示not running**
 
 A: 可查看zookeeper.out文件
 ```
@@ -226,13 +232,17 @@ Caused by: java.lang.IllegalArgumentException: /home/centos/zookeeper/data/myid 
 - 由于dataDir下的myid文件未创建
 - 若日志显示正常却status未显示，可能由于集群模式还未完成选举，等所有机器都启动后再查看
 
-**Q: Field "id" doesn't have a default value**
-
-A: 由于使用hibernete将Result表的id列设置为```@GeneratedValue(strategy = GenerationType.IDENTITY)```因此自增属性交由Mysql管理，而生产环境下的Mysql未配置id为AUTO INCREMENT，因此报错，通过```alter table Result modify id int AUTO INCREMENT;```修改完毕，需要保证连接数据库的进程关闭，否则会卡死
 
 
+**Q3: Field "id" doesn't have a default value**
+
+A: 由于使用hibernete将Result表的id列设置为```@GeneratedValue(strategy = GenerationType.IDENTITY)```因此自增属性交由Mysql管理，而生产环境下的Mysql未配置id为AUTO INCREMENT，因此报错，通过```alter table Result modify id int AUTO INCREMENT;```修改完毕，需要保证连接数据库的进程关闭，否则会卡死。
 
 
+
+**Q4：产生死锁**
+
+A：
 
 ## 5. Contribution
 
@@ -242,3 +252,5 @@ A: 由于使用hibernete将Result表的id列设置为```@GeneratedValue(strategy
 | 516030910219 | 徐家辉 |      |
 | 516030910422 | 赵樱   |      |
 | 516030910367 | 应邦豪 |      |
+
+**项目Github**：https://github.com/sansazhao/Distributed-System-group7
