@@ -16,9 +16,9 @@ TODO：概述
 -  ~~通过zookeeper实现访问商品信息前加锁~~
 -  ~~生成随机订单数据文件~~
 -  ~~在应用开始时重置数据库~~
--  通过http sender发送订单数据
+-  ~~通过http sender发送订单数据~~
 -  ~~通过http receiver接受数据并发送给kafka~~
--  通过zookeeper实现total transaction num的查询
+-  ~~通过zookeeper实现total transaction num的查询~~
 -  ~~启动并行单元实时更改汇率数据~~
 -  ~~在单机系统下完成订单处理~~
 -  **~~在分布式系统下完成订单处理 (完成基本任务)~~**
@@ -26,8 +26,6 @@ TODO：概述
 -  采用分布式的文件系统(eg. hdfs)
 -  采用分布式的Mysql(通过zookeeper管理)
 -  使用不同的spark集群配置(eg. yarn mesos k8s)
-
-
 
 
 ## 1 System Environment
@@ -120,8 +118,6 @@ zookeeper.connect=dist-1:2181,dist-2:2181,dist-3:2181  #zookeeper config
 
 ```
 
-
-
 ### 2.3 安装spark
 spark与hadoop的关系
 - spark使用hdfs作为分布式的文件系统，而在local或者standalone模式下不需要hdfs，因此不需要先安装hadoop
@@ -142,8 +138,6 @@ dist-2
 dist-3
 ```
 在三台机器上都配置slaves文件
-
-
 
 ### 2.4 安装Hadoop(optional)
 
@@ -184,12 +178,6 @@ create table result(
 
 运行master.jar，可启动服务器。
 
-
-
-
-
-
-
 ## 3. Program Design
 
 ### 3.1 测试数据与testfile
@@ -216,17 +204,11 @@ create table result(
 
 ### 3.6 优化latency与throughput
 
-
-
-
-
 ## 4. Problems
 
 **Q1: kafka-console-consumer.sh --zookeeper xxx 报错**
 
 A: 因为版本更新该参数改为--bootstrap-server，需要broker server而不是zookeeper server
-
-
 
 **Q2: zkServer.sh start后status显示not running**
 
@@ -245,13 +227,9 @@ Caused by: java.lang.IllegalArgumentException: /home/centos/zookeeper/data/myid 
 - 由于dataDir下的myid文件未创建
 - 若日志显示正常却status未显示，可能由于集群模式还未完成选举，等所有机器都启动后再查看
 
-
-
 **Q3: Field "id" doesn't have a default value**
 
 A: 由于使用hibernete将Result表的id列设置为```@GeneratedValue(strategy = GenerationType.IDENTITY)```因此自增属性交由Mysql管理，而生产环境下的Mysql未配置id为AUTO INCREMENT，因此报错，通过```alter table Result modify id int AUTO INCREMENT;```修改完毕，需要保证连接数据库的进程关闭，否则会卡死。
-
-
 
 **Q4：产生死锁**
 
