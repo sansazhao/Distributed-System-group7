@@ -48,9 +48,9 @@ TODO：概述
 | dist-3 		| ✔   		  | ✔    |slave|
 | dist-4 		|  			  |  	  |	    |
 
-![zk&kafka.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/spark%26zk.png>)
+
 ![spark&zk.png](https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/zk%26kafka.png)
-![spark.png](https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/spark.png)
+
 
 ## 2 Install and Configuration
 首先需要下载Zookeeper, Kafka, Spark等各种包，因此需要先安装wget指令
@@ -202,13 +202,17 @@ create table result(
 
 ### 3.3 Kafka缓存order flow
 
-![](C:\Users\sansazhao\Desktop\my_work\Distributed-System-group7\picture\zk&kafka.png)
+![zk&kafka.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/spark%26zk.png>)
 
 ### 3.4 Spark Streaming计算
 
+![spark.png](https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/spark.png)
+
 ### 3.5 MySQL存储数据与结果
 
-![](C:\Users\sansazhao\Desktop\my_work\Distributed-System-group7\picture\spark&zk.png)
+![tables.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/tables.png>)
+![commodity.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/commodity.png>)
+![result.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/result.png>)
 
 ### 3.6 优化latency与throughput
 
