@@ -47,7 +47,7 @@ TODO：概述
 | dist-4 		|  			  |  	  |	    |
 
 
-![spark&zk.png](https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/zk%26kafka.png)
+![spark&zk.png](/picture/zk%26kafka.png)
 
 
 ## 2 Install and Configuration
@@ -190,7 +190,7 @@ create table result(
 
 ### 3.3 Kafka缓存order flow
 
-![zk&kafka.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/spark%26zk.png>)
+![zk&kafka.png](/picture/spark%26zk.png)
 
 ### 3.4 Spark Streaming计算
 
@@ -215,7 +215,7 @@ create table result(
      				"dist-1:2181,dist-2:2181,dist-3:2181", "spark_receiver", topicMap);
   ```
 
-  ![spark.png](https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/spark.png)
+  ![spark.png](./picture/spark.png)
 
 - 对messages进行map操作转换成DStream，再进行map操作传入订单处理模块，进行处理返回结果的DStream。
 
@@ -225,7 +225,7 @@ create table result(
   JavaDStream<String> results = lines.map(OrderProcessor::process);
   ```
 
-  ![](C:\Users\sansazhao\Desktop\my_work\Distributed-System-group7\picture\rdd.png)
+  ![](./picture/rdd.png)
 
 
 
@@ -250,7 +250,7 @@ A: 因为版本更新该参数改为--bootstrap-server，需要broker server而�
 **Q2: zkServer.sh start后status显示not running**
 
 A: 可查看zookeeper.out文件
-```
+```shell
 org.apache.zookeeper.server.quorum.QuorumPeerConfig$ConfigException: Error processing /home/centos/soft/zk/bin/../conf/zoo.cfg
         at org.apache.zookeeper.server.quorum.QuorumPeerConfig.parse(QuorumPeerConfig.java:156)
         at org.apache.zookeeper.server.quorum.QuorumPeerMain.initializeAndRun(QuorumPeerMain.java:104)
