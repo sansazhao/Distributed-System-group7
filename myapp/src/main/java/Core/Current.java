@@ -21,16 +21,16 @@ public class Current {
 
         try {
             zookeeper = new ZooKeeper(zookeeper_servers, 2000, null);
-            zookeeper.create("/current", "for current".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            zookeeper.create("/current/RMB", "2.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            zookeeper.create("/current/USD", "12.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            zookeeper.create("/current/JPY", "0.15".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            zookeeper.create("/current/EUR", "9.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            zookeeper.create("/totalAmount", "for total transaction amount".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            zookeeper.create("/totalAmount/RMB", "0.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            zookeeper.create("/totalAmount/USD", "0.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            zookeeper.create("/totalAmount/JPY", "0.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            zookeeper.create("/totalAmount/EUR", "0.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            if(zookeeper.exists("/current", false) == null) zookeeper.create("/current", "for current".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            if(zookeeper.exists("/current/RMB", false) == null) zookeeper.create("/current/RMB", "2.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            if(zookeeper.exists("/current/USD", false) == null) zookeeper.create("/current/USD", "12.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            if(zookeeper.exists("/current/JPY", false) == null) zookeeper.create("/current/JPY", "0.15".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            if(zookeeper.exists("/current/EUR", false) == null) zookeeper.create("/current/EUR", "9.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            if(zookeeper.exists("/totalAmount", false) == null) zookeeper.create("/totalAmount", "for total transaction amount".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            if(zookeeper.exists("/totalAmount/RMB", false) == null) zookeeper.create("/totalAmount/RMB", "0.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            if(zookeeper.exists("/totalAmount/USD", false) == null) zookeeper.create("/totalAmount/USD", "0.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            if(zookeeper.exists("/totalAmount/JPY", false) == null) zookeeper.create("/totalAmount/JPY", "0.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            if(zookeeper.exists("/totalAmount/EUR", false) == null) zookeeper.create("/totalAmount/EUR", "0.0".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             System.out.println("create ");
         } catch (IOException e) {
             e.printStackTrace();
@@ -44,6 +44,8 @@ public class Current {
 
     public static double getCurrentValue(String current) throws Exception {
         if(zookeeper == null) connectZookeeper();
+
+        //System.err.println(zookeeper.getData("/current/" + current, false, null));
         String result = new String(zookeeper.getData("/current/" + current, false, null));
         return Double.parseDouble(result);
     }

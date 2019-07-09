@@ -4,7 +4,7 @@ import Entity.Commodity;
 import Entity.Result;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-
+import org.apache.spark.internal.Logging;
 import Core.Current;
 import java.util.HashMap;
 import java.util.List;
@@ -30,10 +30,15 @@ public class Processor {
         return  result;
     }
 
-    private void lock() {}
-    private void unlock() {}
+    private String lock() {
+        return LockService.lock();
+    }
+    private void unlock(String lockPath) {
+        LockService.unlock(lockPath);
+    }
 
     public JSONObject process(String in) {
+
         JSONObject order = JSONObject.parseObject(in);
         int user_id = order.getIntValue("user_id");
         String initiator = order.getString("initiator");
@@ -41,7 +46,9 @@ public class Processor {
         List<JSONObject> items = JSON.parseArray(order.getString("items"), JSONObject.class);
         double totalPrice = 0;
 
-//        lock();
+        String lockPath = lock();
+        System.out.println("acquire lock over");
+
         rate.put("RMB", getExchangeRate("RMB"));
         rate.put("USD", getExchangeRate("USD"));
         rate.put("JPY", getExchangeRate("JPY"));
@@ -70,10 +77,12 @@ public class Processor {
                 commodity.setInventory(cur - number);
                 cache.put(id, commodity);
             }
+            //System.out.println("debug for initiator");
 
+            //System.out.println(String.format("%s %s",commodity.getCurrency(),initiator));
             totalPrice += commodity.getPrice() * number *
                     rate.get(commodity.getCurrency()) / rate.get(initiator);
-            System.out.println(totalPrice);
+            //System.out.println(totalPrice);
 
         }
 
@@ -87,10 +96,11 @@ public class Processor {
                 e.printStackTrace();
             }
 
-        }
-        else {
+        }else {
             totalPrice = 0;
         }
+        //System.out.println("adding result");
+
 
         Result result = new Result();
         result.setUserId(user_id);
@@ -98,9 +108,13 @@ public class Processor {
         result.setSuccess(success ? "true" : "false");
         result.setPaid(totalPrice);
 
-        ResultService.addResult(result);
-//        unlock();
 
+        //System.out.println("add result before");
+        ResultService.addResult(result);
+        //System.out.println("add result after");
+        //System.out.println("unlock before");
+        unlock(lockPath);
+        //System.out.println("unlock after");
         return (JSONObject) JSONObject.toJSON(result);
     }
 }

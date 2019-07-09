@@ -13,18 +13,20 @@ public class OrderProcessor {
     static public void init(){
         processor = new Processor();
         try {
-            ResultService.initResult();
-            Current.initTotalTxAmount();
+            //ResultService.initResult();
+            //Current.initTotalTxAmount();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
     static public String process(String order){
-        SimpleLock lock = new SimpleLock("bigLock","dist-1:2181,dist-2:2181,dist-3:2181");
+
         String result = "";
+        if(processor == null) init();
         try {
             //lock.lock();
             result = processor.process(order).toJSONString();
+            //System.out.println(result);
             //lock.unlock();
         }catch (Exception e){
             e.printStackTrace();

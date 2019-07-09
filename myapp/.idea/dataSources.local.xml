@@ -4,5 +4,10 @@
     <data-source name="lab5@localhost" uuid="c8699c7e-2f40-470b-8f62-b42c1d0bb9e1">
       <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" />
     </data-source>
+    <data-source name="hibernate.cfg.xml/Hibernate" uuid="5299a928-7bdb-49f6-b840-4faa49b5bd3a">
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" />
+      <first-sync>true</first-sync>
+      <user-name>root</user-name>
+    </data-source>
   </component>
 </project>
