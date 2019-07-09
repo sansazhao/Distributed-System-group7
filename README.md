@@ -1,14 +1,17 @@
-# Distributed-System-group7
-TODO：概述
+## Lab5: 分布式事务管理系统	-group7
 
-> 背景：假设有一个热门的国际购物平台，它需要处理高并发的购物订单。因为它是为世界各地的用户设计，它应该能够支持不同的货币结算。当用户购买商品时，系统会根据当前汇率将原价格兑换成目标货币的价格。
+> **背景:**  假设有一个热门的国际购物平台，它需要处理高并发的购物订单。因为它是为世界各地的用户设计，它应该能够支持不同的货币结算。当用户购买商品时，系统会根据当前汇率将原价格兑换成目标货币的价格。
 
-实验目的：设计并实现一个分布式交易结算系统，接收和处理贸易订单，并记录所有交易结果和总交易金额。
+#### 摘要 
 
-实现工具：4 cloud machines，Zookeeper，Kafka， Spark，MySQL
+基于4台云服务器，使用Zookeeper, Kafka, Spark服务框架和MySQL，设计并实现一个分布式交易结算系统，功能包括接收和处理贸易订单、记录所有交易结果和总交易金额、定时更新汇率，在实现基本功能的基础上尽可能地优化throughput和latency、支持高并发。
+
+
+
 
 
 ## TODO
+
 -  ~~配置完成zookeeper + kafka + spark streaming~~
 -  ~~用spark streaming消费kafka的topic数据~~
 -  ~~使用zookeeper存储并写入汇率数据~~
@@ -35,7 +38,7 @@ TODO：概述
 - 8GB DRAM * 4 
 - 4-core CPU * 4
 
-### 1.2 集群预览
+### 1.2 集群概览
 
 - **TODO：集群分配的职能与示意图**
 
@@ -69,28 +72,28 @@ yum -y install wget
 
 ### 2.1 安装Zookeeper
 
+首先下载合适版本的包，这里选择了zookeeper-3.4.14.tar.gz
+
 ``` shell
 wget https://mirrors.tuna.tsinghua.edu.cnlog4j/apache/zookeeper/zookeeper-3.4.14/zookeeper-3.4.14.tar.gz
 ```
-首先下载合适版本的包，这里选择了zookeeper-3.4.14.tar.gz
+解压至指定文件夹
 
 ``` shell
 tar zxvf zookeeper-3.4.14.tar.gz -C ~/soft
 ```
-解压至指定文件夹
+创建软链接方便使用
 
 ``` shell
 cd ~/soft
 ln -s zookeeper-3.4.14 zk
 ```
-创建软链接方便使用
-
 随后修改默认的配置文件
 ``` shell
 cd conf
 cp zoo_sample.cfg zoo.cfg
 ```
-zoo_sample.cfg为里面自带的样例配置文件，这里直接采用它，需要修改一下
+zoo_sample.cfg为里面自带的样例配置文件，这里直接采用它，需要修改一下：
 ``` shell
 # ~/soft/zk/conf/zoo.cfg
 dataDir=/home/centos/zookeeper/data
@@ -177,11 +180,15 @@ create table result(
 
 ```
 
-运行master.jar，可启动服务器。
+
 
 ## 3. Program Design
 
 ### 3.1 测试数据与testfile
+
+**order json:** TODO
+
+**LockTest.java:** 用于测试zookeeper锁实现的正确性、可扩展性。
 
 
 
@@ -242,9 +249,9 @@ if (stat != null) {
 
 
 
-#### 3.2.2 Zookeeper存储汇率表，定时更新
+#### 3.2.2 用Zookeeper存储汇率表，并定时更新
 
-**main方法实现：**定义4个并行的threads对应4种货币，每分钟修改1次货币汇率。
+**main()：**定义4个并行的threads，分别对应4种货币，每分钟修改1次货币汇率。
 
 ```java
 static public void main(String[] args) {
@@ -260,7 +267,7 @@ static public void main(String[] args) {
 }
 ```
 
-**CurrentChange类实现**：继承Java.Thread类，@override重写Thread.run()方法，使代码更简洁。
+**CurrentChange类实现**：继承Java.Thread类，@Override重写Thread.run()方法，使调用代码更简洁。
 
 ```java
 public class CurrentChange extends Thread {
@@ -275,9 +282,34 @@ public class CurrentChange extends Thread {
 
 ### 3.3 Kafka缓存order flow
 
+**OrderProducer.java:**
+
+```java
+ public static  void main(String args[]) {
+     Properties properties = new Properties(); //--2
+     properties.put("metadata.broker.list","dist-1:9092,dist-2:9092,dist-3:9092");
+     properties.put("serializer.class","kafka.serializer.StringEncoder");
+     properties.put("request.require.acks","1");
+     ProducerConfig config=new ProducerConfig(properties);
+     producer=new Producer<>(config);
+     while (true) {
+     	String message = order();
+        producer.send(new KeyedMessage<>("kafka_spark",message));
+        System.out.println("sent " + message);
+        try {
+            Thread.sleep(1000);
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
+     }
+ }
+```
 
 
-### 3.4 Spark Streaming计算
+
+### 3.4 Spark Streaming进行计算
+
+**App.java:**
 
 - 通过 JavaStreamingContextFactory构建Streaming context对象，指明应用名称"Order Processing"、时间窗口大小(即批处理时间间隔)为**2s**。
 
@@ -304,15 +336,19 @@ public class CurrentChange extends Thread {
 
 - 对messages进行map操作按时间切分、转换成DStream，再进行map操作传入订单处理模块，进行处理返回结果的DStream。
 
-  **DStream：**是Spark Streaming中的一个基本抽象，代表数据流，隐藏了实现细节。DStream可以从kafka等输入源获得，也可以转换得到。在 DStream 内部维护了一组离散的以时间轴为键的 RDD 序列，每个RDD 包含了指定时间段内的数据流，我们对于 DStream 的各种操作最终都会映射到内部的 RDD 上，最终提交给Spark处理。
+  ```
+JavaDStream<String> results = lines.map(OrderProcessor::process);
+  ```
+  
+  
 
-  ```
-  JavaDStream<String> results = lines.map(OrderProcessor::process);
-  ```
+- **DStream：**是Spark Streaming中的一个基本抽象，代表数据流，隐藏了实现细节。DStream可以从kafka等输入源获得，也可以转换得到。在 DStream 内部维护了一组离散的以时间轴为键的 RDD 序列，每个RDD 包含了指定时间段内的数据流，我们对于 DStream 的各种操作最终都会映射到内部的 RDD 上，最终提交给Spark处理。
+
+  
 
   ![](./picture/rdd.png)
-
-- 配置后启动Spark Streaming。
+  
+- 配置后调用start()正式启动Spark Streaming。
 
   ```java
   jssc.start();
@@ -326,9 +362,11 @@ public class CurrentChange extends Thread {
 - MySQL位于dist-1上，集群通过hibernate配置连接3306端口的数据库。
 - Result的id设置为AUTO_INCREMENT自增。
 
-![tables.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/tables.png>)
-![commodity.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/commodity.png>)
-![result.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/result.png>)
+<img src="/picture/tables.png"  style="margin-left:0px"/>
+
+<img src="/picture/commodity.png" width="450px" style="margin-left:0px"/>
+
+<img src="/picture/result.png" width="450px" style="margin-left:0px"/>
 
 
 
