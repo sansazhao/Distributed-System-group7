@@ -40,7 +40,7 @@
 
 ### 1.2 集群概览
 
-- **TODO：集群分配的职能与示意图**
+- **各服务器的职能**
 
 | 虚拟机         | zookeeper   | kafka |spark|
 | ------------- | ----------- | ----- |-----|
@@ -184,17 +184,93 @@ create table result(
 
 ## 3. Program Design
 
-### 3.1 测试数据与testfile
 
-**order json：** TODO
+### 3.1 Kafka接收order flow
 
-**LockTest.java：** 用于测试zookeeper锁实现的正确性、可扩展性。
+**过时！！OrderProducer.java：**向kafka集群发送订单数据的producer。kafka提供了许多简易的API可以直接调用。
+
+- 使用`java.util.Properties`配置并初始化kafka producer实例。
+
+- 调用`producer.send()`接口，将缓冲池中的消息异步地发送到broker的指定topic中。
+
+  异步发送是指，`send()`将消息存储到底层待发送的I/O buffer后，将立即返回，从而并行无阻塞地发送更多消息，因此kafka能批量处理消息(batch)以提高效率。
+
+```java
+import kafka.javaapi.producer.Producer;
+import kafka.producer.KeyedMessage;
+import kafka.producer.ProducerConfig;
+
+public static void main(String args[]) {
+     Properties properties = new Properties(); //--2
+     properties.put("metadata.broker.list","dist-1:9092,dist-2:9092,dist-3:9092");
+     properties.put("serializer.class","kafka.serializer.StringEncoder");
+     properties.put("request.require.acks","1");
+     ProducerConfig config=new ProducerConfig(properties);
+     producer=new Producer<>(config);
+     while (true) {
+     	String message = order();
+        producer.send(new KeyedMessage<>("kafka_spark",message));
+        System.out.println("sent " + message);
+        try {
+            Thread.sleep(1000);
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
+     }
+}
+```
 
 
 
-### 3.2 Zookeeper的事务管理
+### 3.2 Spark Streaming进行计算和处理
 
-#### 3.2.1 分布式锁的实现
+**App.java：**
+
+- 通过 JavaStreamingContextFactory构建Streaming context对象，指明应用名称"Order Processing"、时间窗口大小(即批处理时间间隔)为**2s** 。
+
+  ```java
+  SparkConf conf = new SparkConf().setAppName("Order Processing");
+  JavaSparkContext sc = new JavaSparkContext(conf);
+  sc.setLogLevel("WARN");
+  JavaStreamingContext jssc = new JavaStreamingContext(sc, Durations.seconds(2));
+  ```
+
+- 创建inputDstream，定义数据源。本项目利用KafkaStream的API，创建Kafka topic后，直接读取kafka。
+
+  **TODO: offset的保存，提及优化**
+
+  ```java
+  Map<String, Integer> topicMap = new HashMap<String, Integer>();
+  topicMap.put("kafka_spark", 1);
+  JavaPairReceiverInputDStream<String, String> messages =
+         			KafkaUtils.createDirectStream(jssc,
+     				"dist-1:2181,dist-2:2181,dist-3:2181", "spark_receiver", topicMap);
+  ```
+
+  <img src="/picture/spark.png" width="700px"/>
+
+- 对messages进行map操作按时间切分、转换成DStream，再进行map操作传入订单处理模块，进行处理返回结果的DStream。
+
+    ```java
+    JavaDStream<String> results = lines.map(OrderProcessor::process);
+    ```
+  
+- **DStream：** 是Spark Streaming中的一个基本抽象，代表数据流，隐藏了实现细节。DStream可以从kafka等输入源获得，也可以转换得到。在 DStream 内部维护了一组离散的以时间轴为键的 RDD 序列，每个RDD 包含了指定时间段内的数据流，我们对于 DStream 的各种操作最终都会映射到内部的 RDD 上，最终提交给Spark处理。
+
+  <img src="/picture/rdd.png" width="700px"/>
+
+- 配置后调用start()正式启动Spark Streaming。
+
+  ```java
+  jssc.start();
+  jssc.awaitTermination();
+  ```
+
+
+
+### 3.3 Zookeeper的事务管理
+
+#### 3.3.1 分布式锁的实现
 
 **init()**: 初始化Zookeeper服务器，若服务器上不存在 `/lock` 节点则创建，该节点是一个持久节点(PERSISTENT)
 
@@ -243,15 +319,15 @@ if (stat != null) {
 
   **unlock():** 获取 `/lock` 父节点的所有子节点，删除其中顺序号最小的节点
 
-****
+
 
 ![zk&kafka.png](/picture/spark%26zk.png)
 
 
 
-#### 3.2.2 用Zookeeper存储汇率表，并定时更新
+#### 3.3.2 用Zookeeper存储汇率表，并定时更新
 
-**main()：** 定义4个并行的threads，分别对应4种货币，每分钟修改1次货币汇率。
+**main()：** 定义4个并行的线程，分别对应4种货币，每分钟修改1次货币汇率。
 
 ```java
 static public void main(String[] args) {
@@ -267,7 +343,7 @@ static public void main(String[] args) {
 }
 ```
 
-**CurrentChange类实现** ：继承Java.Thread类，@Override重写Thread.run()方法，使调用代码更简洁。
+**CurrentChange类实现** ：继承Java.Thread类，@Override重写`Thread.run()`方法，使调用代码更简洁。
 
 ```java
 public class CurrentChange extends Thread {
@@ -279,81 +355,9 @@ public class CurrentChange extends Thread {
 ```
 
 
-
-### 3.3 Kafka缓存order flow
-
-**OrderProducer.java：**
-
-```java
- public static  void main(String args[]) {
-     Properties properties = new Properties(); //--2
-     properties.put("metadata.broker.list","dist-1:9092,dist-2:9092,dist-3:9092");
-     properties.put("serializer.class","kafka.serializer.StringEncoder");
-     properties.put("request.require.acks","1");
-     ProducerConfig config=new ProducerConfig(properties);
-     producer=new Producer<>(config);
-     while (true) {
-     	String message = order();
-        producer.send(new KeyedMessage<>("kafka_spark",message));
-        System.out.println("sent " + message);
-        try {
-            Thread.sleep(1000);
-        }catch (InterruptedException e){
-            e.printStackTrace();
-        }
-     }
- }
-```
-
-
-
-### 3.4 Spark Streaming进行计算
-
-**App.java：**
-
-- 通过 JavaStreamingContextFactory构建Streaming context对象，指明应用名称"Order Processing"、时间窗口大小(即批处理时间间隔)为**2s** 。
-
-  ```java
-  SparkConf conf = new SparkConf().setAppName("Order Processing");
-  JavaSparkContext sc = new JavaSparkContext(conf);
-  sc.setLogLevel("WARN");
-  JavaStreamingContext jssc = new JavaStreamingContext(sc, Durations.seconds(2));
-  ```
-
-- 创建inputDstream，定义数据源。本项目利用KafkaStream的API，创建Kafka topic后，直接读取kafka。
-
-  **TODO: offset的保存，提及优化**
-
-  ```java
-  Map<String, Integer> topicMap = new HashMap<String, Integer>();
-  topicMap.put("kafka_spark", 1);
-  JavaPairReceiverInputDStream<String, String> messages =
-         			KafkaUtils.createDirectStream(jssc,
-     				"dist-1:2181,dist-2:2181,dist-3:2181", "spark_receiver", topicMap);
-  ```
-
-  ![spark.png](./picture/spark.png)
-
-- 对messages进行map操作按时间切分、转换成DStream，再进行map操作传入订单处理模块，进行处理返回结果的DStream。
-
-    ```java
-    JavaDStream<String> results = lines.map(OrderProcessor::process);
-    ```
-  
-- **DStream：** 是Spark Streaming中的一个基本抽象，代表数据流，隐藏了实现细节。DStream可以从kafka等输入源获得，也可以转换得到。在 DStream 内部维护了一组离散的以时间轴为键的 RDD 序列，每个RDD 包含了指定时间段内的数据流，我们对于 DStream 的各种操作最终都会映射到内部的 RDD 上，最终提交给Spark处理。
-
-  ![](./picture/rdd.png)
-
-- 配置后调用start()正式启动Spark Streaming。
-
-  ```java
-  jssc.start();
-  jssc.awaitTermination();
-  ```
-
   
 
-### 3.5 MySQL存储数据与结果
+### 3.4 MySQL存储数据与结果
 
 - MySQL位于dist-1上，集群通过hibernate配置连接3306端口的数据库。
 - Result的id设置为AUTO_INCREMENT自增。
@@ -366,7 +370,17 @@ public class CurrentChange extends Thread {
 
 
 
+### 3.5 测试数据与testfile
+
+**order json：** TODO
+
+**LockTest.java：** 用于测试zookeeper锁实现的正确性、可扩展性。
+
+
+
+
 ### 3.6 优化latency与throughput
+
 
 
 
