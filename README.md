@@ -194,7 +194,40 @@ create table result(
 
 ### 3.4 Spark Streaming计算
 
-![spark.png](https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/spark.png)
+- 通过 JavaStreamingContextFactory构建Streaming context对象，指明应用名称"Order Processing"、时间窗口大小(即批处理时间间隔)为**2s**。
+
+  ```java
+  SparkConf conf = new SparkConf().setAppName("Order Processing");
+  JavaSparkContext sc = new JavaSparkContext(conf);
+  sc.setLogLevel("WARN");
+  JavaStreamingContext jssc = new JavaStreamingContext(sc, Durations.seconds(2));
+  ```
+
+- 创建inputDstream，定义数据源。本项目利用KafkaStream的API，创建Kafka topic后，直接读取kafka。
+
+  **TODO: offset的保存，提及优化**
+
+  ```java
+  Map<String, Integer> topicMap = new HashMap<String, Integer>();
+  topicMap.put("kafka_spark", 1);
+  JavaPairReceiverInputDStream<String, String> messages =
+         			KafkaUtils.createDirectStream(jssc,
+     				"dist-1:2181,dist-2:2181,dist-3:2181", "spark_receiver", topicMap);
+  ```
+
+  ![spark.png](https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/spark.png)
+
+- 对messages进行map操作转换成DStream，再进行map操作传入订单处理模块，进行处理返回结果的DStream。
+
+  DStream：是Spark Streaming中的一个基本抽象，代表数据流，隐藏了实现细节。DStream可以从kafka等输入源获得，也可以转换得到。在 DStream 内部维护了一组离散的以时间轴为键的 RDD 序列，每个RDD 包含了指定时间段内的数据流，我们对于 DStream 的各种操作最终都会映射到内部的 RDD 上，最终提交给Spark处理。
+
+  ```
+  JavaDStream<String> results = lines.map(OrderProcessor::process);
+  ```
+
+  ![](C:\Users\sansazhao\Desktop\my_work\Distributed-System-group7\picture\rdd.png)
+
+
 
 ### 3.5 MySQL存储数据与结果
 
@@ -204,11 +237,15 @@ create table result(
 
 ### 3.6 优化latency与throughput
 
+
+
 ## 4. Problems
 
 **Q1: kafka-console-consumer.sh --zookeeper xxx 报错**
 
 A: 因为版本更新该参数改为--bootstrap-server，需要broker server而不是zookeeper server
+
+
 
 **Q2: zkServer.sh start后status显示not running**
 
@@ -227,9 +264,13 @@ Caused by: java.lang.IllegalArgumentException: /home/centos/zookeeper/data/myid 
 - 由于dataDir下的myid文件未创建
 - 若日志显示正常却status未显示，可能由于集群模式还未完成选举，等所有机器都启动后再查看
 
+
+
 **Q3: Field "id" doesn't have a default value**
 
 A: 由于使用hibernete将Result表的id列设置为```@GeneratedValue(strategy = GenerationType.IDENTITY)```因此自增属性交由Mysql管理，而生产环境下的Mysql未配置id为AUTO INCREMENT，因此报错，通过```alter table Result modify id int AUTO INCREMENT;```修改完毕，需要保证连接数据库的进程关闭，否则会卡死。
+
+
 
 **Q4：产生死锁**
 
