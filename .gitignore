@@ -1,1 +1,4 @@
 data/*
+script/build
+script/dist
+script/__pycache__
