@@ -1,8 +1,8 @@
 ## Lab5: 分布式事务管理系统	-group7
 
-> **背景:**  假设有一个热门的国际购物平台，它需要处理高并发的购物订单。因为它是为世界各地的用户设计，它应该能够支持不同的货币结算。当用户购买商品时，系统会根据当前汇率将原价格兑换成目标货币的价格。
+> **背景：**  假设有一个热门的国际购物平台，它需要处理高并发的购物订单。因为它是为世界各地的用户设计，它应该能够支持不同的货币结算。当用户购买商品时，系统会根据当前汇率将原价格兑换成目标货币的价格。
 
-#### 摘要 
+### 摘要 
 
 基于4台云服务器，使用Zookeeper, Kafka, Spark服务框架和MySQL，设计并实现一个分布式交易结算系统，功能包括接收和处理贸易订单、记录所有交易结果和总交易金额、定时更新汇率，在实现基本功能的基础上尽可能地优化throughput和latency、支持高并发。
 
@@ -186,9 +186,9 @@ create table result(
 
 ### 3.1 测试数据与testfile
 
-**order json:** TODO
+**order json：** TODO
 
-**LockTest.java:** 用于测试zookeeper锁实现的正确性、可扩展性。
+**LockTest.java：** 用于测试zookeeper锁实现的正确性、可扩展性。
 
 
 
@@ -222,8 +222,8 @@ Collections.sort(children, new Comparator<String>() {
 	public int compare(String left, String right) {        
 		String leftId = left.substring(lockPrefix.length());        
 		String rightId = right.substring(lockPrefix.length());
-        return leftId.compareTo(rightId);
-    }
+                return leftId.compareTo(rightId);
+        }
 });
 if (nodePath.equals(children.get(0))) {    
 	System.out.println(nodePath + " acquire the lock");
@@ -251,14 +251,14 @@ if (stat != null) {
 
 #### 3.2.2 用Zookeeper存储汇率表，并定时更新
 
-**main()：**定义4个并行的threads，分别对应4种货币，每分钟修改1次货币汇率。
+**main()：** 定义4个并行的threads，分别对应4种货币，每分钟修改1次货币汇率。
 
 ```java
 static public void main(String[] args) {
-	String[] currencies = {"RMB","USD","JPY","EUR"};
-	Double[] initValues = {2.0, 12.0, 0.15, 9.0};
+    String[] currencies = {"RMB","USD","JPY","EUR"};
+    Double[] initValues = {2.0, 12.0, 0.15, 9.0};
     CurrentChange[] threads = new CurrentChange[currencies.length];
-	for (int i = 0; i < threads.length; i++) {
+    for (int i = 0; i < threads.length; i++) {
         threads[i] = new CurrentChange(currencies[i],initValues[i]);
     }
     for (CurrentChange thread : threads) {
@@ -267,13 +267,13 @@ static public void main(String[] args) {
 }
 ```
 
-**CurrentChange类实现**：继承Java.Thread类，@Override重写Thread.run()方法，使调用代码更简洁。
+**CurrentChange类实现** ：继承Java.Thread类，@Override重写Thread.run()方法，使调用代码更简洁。
 
 ```java
 public class CurrentChange extends Thread {
     @Override
     public void run(){
- 		//implementation of changing exchange rate every 60s
+        //implementation of changing exchange rate every 60s
     }
 }
 ```
@@ -282,7 +282,7 @@ public class CurrentChange extends Thread {
 
 ### 3.3 Kafka缓存order flow
 
-**OrderProducer.java:**
+**OrderProducer.java：**
 
 ```java
  public static  void main(String args[]) {
@@ -309,9 +309,9 @@ public class CurrentChange extends Thread {
 
 ### 3.4 Spark Streaming进行计算
 
-**App.java:**
+**App.java：**
 
-- 通过 JavaStreamingContextFactory构建Streaming context对象，指明应用名称"Order Processing"、时间窗口大小(即批处理时间间隔)为**2s**。
+- 通过 JavaStreamingContextFactory构建Streaming context对象，指明应用名称"Order Processing"、时间窗口大小(即批处理时间间隔)为**2s** 。
 
   ```java
   SparkConf conf = new SparkConf().setAppName("Order Processing");
@@ -336,18 +336,14 @@ public class CurrentChange extends Thread {
 
 - 对messages进行map操作按时间切分、转换成DStream，再进行map操作传入订单处理模块，进行处理返回结果的DStream。
 
-  ```
-JavaDStream<String> results = lines.map(OrderProcessor::process);
-  ```
+    ```java
+    JavaDStream<String> results = lines.map(OrderProcessor::process);
+    ```
   
-  
-
-- **DStream：**是Spark Streaming中的一个基本抽象，代表数据流，隐藏了实现细节。DStream可以从kafka等输入源获得，也可以转换得到。在 DStream 内部维护了一组离散的以时间轴为键的 RDD 序列，每个RDD 包含了指定时间段内的数据流，我们对于 DStream 的各种操作最终都会映射到内部的 RDD 上，最终提交给Spark处理。
-
-  
+- **DStream：** 是Spark Streaming中的一个基本抽象，代表数据流，隐藏了实现细节。DStream可以从kafka等输入源获得，也可以转换得到。在 DStream 内部维护了一组离散的以时间轴为键的 RDD 序列，每个RDD 包含了指定时间段内的数据流，我们对于 DStream 的各种操作最终都会映射到内部的 RDD 上，最终提交给Spark处理。
 
   ![](./picture/rdd.png)
-  
+
 - 配置后调用start()正式启动Spark Streaming。
 
   ```java
