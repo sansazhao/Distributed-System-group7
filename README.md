@@ -187,9 +187,56 @@ create table result(
 
 ### 3.2 Zookeeper的事务管理
 
-#### 3.2.1 分布式锁的实现	待补充！
+#### 3.2.1 分布式锁的实现
 
+**init()**: 初始化Zookeeper服务器，若服务器上不存在 `/lock` 节点则创建，该节点是一个持久节点(PERSISTENT)
 
+```java
+Stat stat = zookeeper.exists(parentPath, null);
+if (stat == null) {
+	zookeeper.create(parentPath, "for lock".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+}
+```
+
+**lock():** 
+
+- 在父节点 `/lock` 下创建一个临时顺序子节点(EPHEMERAL_SEQUENTIAL)，该节点会在客户端断开连接时删除，并且服务器会给该节点加上一个全局唯一的顺序后缀。指定子节点的前缀，最终创建的节点路径为`/lock/lock-0000000001`.  
+
+```java
+String lockPath = zookeeper.create(lockPrefix, "lock node".getBytes(),
+                    ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+```
+
+- 获取 `/lock` 节点的所有子节点，按后缀排序后判断第一步创建的节点是不是所有子节点中顺序最小的节点，如果是，则lock()函数返回，调用者获得锁
+
+```java
+List<String> children = zookeeper.getChildren("/lock", false);
+Collections.sort(children, new Comparator<String>() {    
+	public int compare(String left, String right) {        
+		String leftId = left.substring(lockPrefix.length());        
+		String rightId = right.substring(lockPrefix.length());
+        return leftId.compareTo(rightId);
+    }
+});
+if (nodePath.equals(children.get(0))) {    
+	System.out.println(nodePath + " acquire the lock");
+}
+```
+
+- 若当前节点不是最小的节点，则创建 `LockWatcher` 来监听前一个节点的删除事件，接着 `LockWatcher` 会调用 `latch.countDown()` 使得正在等待 `latch` 的 `lock()`函数能够继续执行下去获得锁
+
+```java
+CountDownLatch latch = new CountDownLatch(1);
+LockWatcher lockWatcher = new LockWatcher(latch);
+Stat stat = zookeeper.exists(prePath, lockWatcher);
+if (stat != null) {    
+    latch.await();
+}
+```
+
+  **unlock():** 获取 `/lock` 父节点的所有子节点，删除其中顺序号最小的节点
+
+****
 
 ![zk&kafka.png](/picture/spark%26zk.png)
 
