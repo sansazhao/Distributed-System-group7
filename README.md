@@ -47,7 +47,7 @@ TODO：概述
 | dist-4 		|  			  |  	  |	    |
 
 
-![spark&zk.png](/picture/zk%26kafka.png)
+![spark&zk.png](/picture/total.png)
 
 
 ## 2 Install and Configuration
@@ -120,6 +120,7 @@ zookeeper.connect=dist-1:2181,dist-2:2181,dist-3:2181  #zookeeper config
 
 ### 2.3 安装spark
 spark与hadoop的关系
+
 - spark使用hdfs作为分布式的文件系统，而在local或者standalone模式下不需要hdfs，因此不需要先安装hadoop
 
 
@@ -143,7 +144,7 @@ dist-3
 
 ### 2.5 配置Mysql
 
-选择使用第四台机器作为数据库服务器，本地配置mysql
+选择使用dist-1作为数据库服务器，本地配置mysql。
 
 ``` shell
 # 下载mysql的repo源
@@ -182,15 +183,52 @@ create table result(
 
 ### 3.1 测试数据与testfile
 
-### 3.2 Zookeeper事务管理
 
-- 分布式锁的实现
 
-- zookeeper存储汇率表，定义4个并行的threads对应4种货币，每分钟修改1次货币汇率。
+### 3.2 Zookeeper的事务管理
+
+#### 3.2.1 分布式锁的实现	待补充！
+
+
+
+![zk&kafka.png](/picture/spark%26zk.png)
+
+
+
+#### 3.2.2 Zookeeper存储汇率表，定时更新
+
+**main方法实现：**定义4个并行的threads对应4种货币，每分钟修改1次货币汇率。
+
+```java
+static public void main(String[] args) {
+	String[] currencies = {"RMB","USD","JPY","EUR"};
+	Double[] initValues = {2.0, 12.0, 0.15, 9.0};
+    CurrentChange[] threads = new CurrentChange[currencies.length];
+	for (int i = 0; i < threads.length; i++) {
+        threads[i] = new CurrentChange(currencies[i],initValues[i]);
+    }
+    for (CurrentChange thread : threads) {
+        thread.start();
+    }
+}
+```
+
+**CurrentChange类实现**：继承Java.Thread类，@override重写Thread.run()方法，使代码更简洁。
+
+```java
+public class CurrentChange extends Thread {
+    @Override
+    public void run(){
+ 		//implementation of changing exchange rate every 60s
+    }
+}
+```
+
+
 
 ### 3.3 Kafka缓存order flow
 
-![zk&kafka.png](/picture/spark%26zk.png)
+
 
 ### 3.4 Spark Streaming计算
 
@@ -217,9 +255,9 @@ create table result(
 
   ![spark.png](./picture/spark.png)
 
-- 对messages进行map操作转换成DStream，再进行map操作传入订单处理模块，进行处理返回结果的DStream。
+- 对messages进行map操作按时间切分、转换成DStream，再进行map操作传入订单处理模块，进行处理返回结果的DStream。
 
-  DStream：是Spark Streaming中的一个基本抽象，代表数据流，隐藏了实现细节。DStream可以从kafka等输入源获得，也可以转换得到。在 DStream 内部维护了一组离散的以时间轴为键的 RDD 序列，每个RDD 包含了指定时间段内的数据流，我们对于 DStream 的各种操作最终都会映射到内部的 RDD 上，最终提交给Spark处理。
+  **DStream：**是Spark Streaming中的一个基本抽象，代表数据流，隐藏了实现细节。DStream可以从kafka等输入源获得，也可以转换得到。在 DStream 内部维护了一组离散的以时间轴为键的 RDD 序列，每个RDD 包含了指定时间段内的数据流，我们对于 DStream 的各种操作最终都会映射到内部的 RDD 上，最终提交给Spark处理。
 
   ```
   JavaDStream<String> results = lines.map(OrderProcessor::process);
@@ -227,13 +265,25 @@ create table result(
 
   ![](./picture/rdd.png)
 
+- 配置后启动Spark Streaming。
 
+  ```java
+  jssc.start();
+  jssc.awaitTermination();
+  ```
+
+  
 
 ### 3.5 MySQL存储数据与结果
+
+- MySQL位于dist-1上，集群通过hibernate配置连接3306端口的数据库。
+- Result的id设置为AUTO_INCREMENT自增。
 
 ![tables.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/tables.png>)
 ![commodity.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/commodity.png>)
 ![result.png](<https://github.com/sansazhao/Distributed-System-group7/raw/master/picture/result.png>)
+
+
 
 ### 3.6 优化latency与throughput
 
@@ -274,7 +324,9 @@ A: 由于使用hibernete将Result表的id列设置为```@GeneratedValue(strategy
 
 **Q4：产生死锁**
 
-A：
+A：由于共享static变量， 多个worker/多线程拿锁产生问题，没有有效放锁。修改lockService类的实现，删去lockPath的static变量，并且每次zookeeper删除节点时都删除最小节点。
+
+
 
 ## 5. Contribution
 
@@ -282,7 +334,7 @@ A：
 | ------------ | ------ | ---- |
 | 516030910328 | 蔡忠玮 |      |
 | 516030910219 | 徐家辉 |      |
-| 516030910422 | 赵樱   |      |
+| 516030910422 | 赵樱   | 水报告 |
 | 516030910367 | 应邦豪 |划水   |
 
 **项目Github**：https://github.com/sansazhao/Distributed-System-group7
