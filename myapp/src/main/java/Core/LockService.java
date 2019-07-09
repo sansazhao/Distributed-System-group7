@@ -30,15 +30,12 @@ public class LockService {
     private static String zookeeper_server;
     private static String parentPath = "/lock";
     private static String lockPrefix = "/lock/lock-";
-    private static String lockPath;
-    private static CountDownLatch latch = new CountDownLatch(1);
-    private static LockWatcher lockWatcher = new LockWatcher(latch);
 
     static public void init() {
         zookeeper_server = new String("dist-1:2181,dist-2:2181,dist-3:2181");
 
         try {
-            zookeeper = new ZooKeeper(zookeeper_server,2000, lockWatcher);
+            zookeeper = new ZooKeeper("localhost:2181",2000, null);
             Stat stat = zookeeper.exists(parentPath, null);
             if (stat == null) {
                 zookeeper.create(parentPath, "for lock".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -50,7 +47,9 @@ public class LockService {
 
     public static String lock(){
         String localLockPath = "";
+        String lockPath;
         try {
+
             CountDownLatch localLatch = new CountDownLatch(1);
             boolean empty;
             if(zookeeper == null) init();
@@ -69,6 +68,7 @@ public class LockService {
                 });
                 empty = nodePath.equals(children.get(0));
 
+
             if (empty) {
                 System.out.println(nodePath + " acquire the lock");
             }
@@ -78,9 +78,11 @@ public class LockService {
                 String prePath = lockPrefix + preId;
                 System.out.println(lockPath.substring(parentPath.length() + 1) +
                         " is watching " + prePath.substring(parentPath.length() + 1));
+
                 zookeeper.exists(prePath, new LockWatcher(localLatch));
 
             }
+
             }
             localLockPath = lockPath;
             if(!empty){
@@ -96,12 +98,14 @@ public class LockService {
 
     public static void unlock(String lockpath) {
         try {
+
             synchronized (key) {
                 if(zookeeper == null) init();
                 System.out.println(lockpath.substring(parentPath.length() + 1) + " release the lock");
-                latch = new CountDownLatch(1);
+                //latch = new CountDownLatch(1);
                 zookeeper.delete(lockpath, -1);
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
