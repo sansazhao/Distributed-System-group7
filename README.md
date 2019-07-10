@@ -415,6 +415,13 @@ Caused by: java.lang.IllegalArgumentException: /home/centos/zookeeper/data/myid 
 
 A: 由于使用hibernete将Result表的id列设置为```@GeneratedValue(strategy = GenerationType.IDENTITY)```因此自增属性交由Mysql管理，而生产环境下的Mysql未配置id为AUTO INCREMENT，因此报错，通过```alter table Result modify id int AUTO INCREMENT;```修改完毕，需要保证连接数据库的进程关闭，否则会卡死。
 
+**Q: 发现spark应用消费速度过慢，只有个位数throughput**
+
+A: 首先排查kafka本身吞吐量，通过kafka-producer-perf-test.sh测试发现kafka的吞吐量正常，其次怀疑任务本身过于耗时，通过不执行任务直接将input的数据print出来，问题没有得到解决，发现由于Dstream的print方法在数量大于10个时后续以省略号表示
+
+**Q: Web请求处理速度过慢，throughput仅有十几**
+
+A: 由于之前在本机上发送订单请求，，怀疑由于Web Receiver瓶颈，因此将sender的python脚本进行打包，在集群上进行send，打算采用多个Receiver方式，然后发现服务器上send速度很快，因此问题为开发机至服务器间的网络
 
 
 **Q4：产生死锁**

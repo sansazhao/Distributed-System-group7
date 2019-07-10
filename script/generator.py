@@ -4,8 +4,8 @@ import json
 import random
 import time
 NUM_OF_FILES = 3
-NUM_OF_ORDERS = 10000
-item_ids = [str(i) for i in range(1,500)]
+NUM_OF_ORDERS = 100000
+item_ids = [str(i) for i in range(1,5000)]
 total_map = {}
 
 def random_generate_order():
@@ -20,7 +20,7 @@ def random_generate_order():
     order["user_id"] = random.randint(1,100000)
     order["initiator"] = random.choices(population = ["RMB","USD","JPY","EUR"],k=1)
     order["time"] = int(time.time())
-    num = random.randint(1,len(item_ids) // 50)
+    num = random.randint(1,len(item_ids) // 500)
     ids = random.sample(item_ids,num)
     order["items"].clear()
     for id in ids:

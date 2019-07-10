@@ -51,6 +51,7 @@ public class App {
         OrderProcessor.init();
 
         Current.connectZookeeper();
+        Current.initTotalTxAmount();
         LockService.init();
     }
 

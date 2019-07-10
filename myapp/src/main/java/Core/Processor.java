@@ -6,8 +6,12 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.spark.internal.Logging;
 import Core.Current;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class Processor {
 
@@ -30,14 +34,16 @@ public class Processor {
         return  result;
     }
 
-    private String lock() {
-        return LockService.lock();
+    private String lock(Integer id) {
+        return LockService.lock(id);
     }
     private void unlock(String lockPath) {
         LockService.unlock(lockPath);
     }
 
     public JSONObject process(String in) {
+        long startTime = System.currentTimeMillis();
+
 
         JSONObject order = JSONObject.parseObject(in);
         int user_id = order.getIntValue("user_id");
@@ -46,8 +52,9 @@ public class Processor {
         List<JSONObject> items = JSON.parseArray(order.getString("items"), JSONObject.class);
         double totalPrice = 0;
 
-        String lockPath = lock();
-        System.out.println("acquire lock over");
+        List<String> lockPaths = new ArrayList<>();
+//        String lockPath = lock();
+//        System.out.println("acquire lock over");
 
         rate.put("RMB", getExchangeRate("RMB"));
         rate.put("USD", getExchangeRate("USD"));
@@ -56,13 +63,32 @@ public class Processor {
 
         Boolean success = true;
 
+        Collections.sort(items,new Comparator<JSONObject>() {
+            @Override
+            public int compare(JSONObject u1, JSONObject u2) {
+                return (u1.getIntValue("id") < u2.getIntValue("id"))?1:-1;
+            }
+        });
+
         HashMap<Integer, Commodity> cache = new HashMap<>();
+
+        long lockStartTime = System.currentTimeMillis();
+
+        for (JSONObject item : items) {
+            lockPaths.add(lock(item.getIntValue("id")));
+        }
+        long lockEndTime = System.currentTimeMillis();
+        System.out.println("加锁运行时间："+(lockEndTime-lockStartTime)+"ms");
+
 
         for (JSONObject item : items) {
             int id = item.getIntValue("id");
             int number = item.getIntValue("number");
             Commodity commodity;
             if (!cache.containsKey(id)) {
+
+
+
                 commodity = CommodityService.getCommodity(id);
                 cache.put(id, commodity);
             }
@@ -91,6 +117,7 @@ public class Processor {
                 CommodityService.updateCommodity(cache.get(id));
             }
             try {
+                System.out.println("update tx amount initiator " + initiator + " total price " + totalPrice);
                 Current.updateTotalTxAmount(initiator, totalPrice);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -114,12 +141,21 @@ public class Processor {
         //System.out.println("add result after");
         //System.out.println("unlock before");
 
+        long unlockStartTime = System.currentTimeMillis();
 
-        unlock(lockPath);
+        for (String lockPath : lockPaths) {
+            unlock(lockPath);
+        }
+        long unlockEndTime = System.currentTimeMillis();
 
 
 
+        System.out.println("解锁运行时间："+(unlockEndTime-unlockStartTime)+"ms");
         //System.out.println("unlock after");
+
+        long endTime = System.currentTimeMillis();
+        System.out.println("任务运行时间："+(endTime-startTime)+"ms");
+
         return (JSONObject) JSONObject.toJSON(result);
     }
 }
