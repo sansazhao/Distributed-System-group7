@@ -439,9 +439,9 @@ A：由于共享static变量， 多个worker/多线程拿锁产生问题，没�
 
 5.1 锁优化前：throughput约 25 order/sec
 
-![](C:\Users\sansazhao\Desktop\my_work\Distributed-System-group7\picture\streaming3.png)
+![](/picture/streaming3.png)
 
-![](C:\Users\sansazhao\Desktop\my_work\Distributed-System-group7\picture\streaming2.png)
+![](/picture/streaming2.png)
 
 5.2 锁优化后：
 
