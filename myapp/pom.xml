@@ -19,23 +19,6 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <!-- 指定该Main Class为全局的唯一入口 -->
-                    <mainClass>Web.WebApp</mainClass>
-                    <layout>ZIP</layout>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal><!--可以把依赖的包都打包到生成的Jar包中-->
-                        </goals>
-
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
@@ -51,12 +34,10 @@
             <artifactId>nanohttpd</artifactId>
             <version>2.2.0</version>
         </dependency>
-
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>mysql</groupId>-->
+<!--            <artifactId>mysql-connector-java</artifactId>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
@@ -67,13 +48,13 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-streaming-kafka-0-8_2.11</artifactId>
             <version>2.4.3</version>
-<scope>compile</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-streaming_2.11</artifactId>
             <version>2.4.3</version>
-<scope>provided</scope>
+            <scope>provided</scope>
 
         </dependency>
         <dependency>
@@ -91,5 +72,10 @@
             <artifactId>zookeeper</artifactId>
             <version>3.3.6</version>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>dsgroup</groupId>-->
+<!--            <artifactId>myapp</artifactId>-->
+<!--            <version>1.0-SNAPSHOT</version>-->
+<!--        </dependency>-->
     </dependencies>
 </project>

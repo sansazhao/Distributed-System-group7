@@ -1,8 +1,9 @@
 ## Lab5: 分布式事务管理系统	-group7
 
-> **背景：**  假设有一个热门的国际购物平台，它需要处理高并发的购物订单。因为它是为世界各地的用户设计，它应该能够支持不同的货币结算。当用户购买商品时，系统会根据当前汇率将原价格兑换成目标货币的价格。
+### 实验背景  
+假设有一个热门的国际购物平台，它需要处理高并发的购物订单。因为它是为世界各地的用户设计，它应该能够支持不同的货币结算。当用户购买商品时，系统会根据当前汇率将原价格兑换成目标货币的价格。
 
-### 摘要 
+### 实验目的 
 
 基于4台云服务器，使用Zookeeper, Kafka, Spark服务框架和MySQL，设计并实现一个分布式交易结算系统，功能包括接收和处理贸易订单、记录所有交易结果和总交易金额、定时更新汇率，在实现基本功能的基础上尽可能地优化throughput和latency、支持高并发。
 
@@ -185,11 +186,15 @@ create table result(
 ## 3. Program Design
 
 
-### 3.1 Kafka接收order flow
+### 3.1 用Kafka接收order flow
 
-**过时！！OrderProducer.java：**向kafka集群发送订单数据的producer。kafka提供了许多简易的API可以直接调用。
+kafka提供了许多简易的API可以直接调用，使用kafka.producer API实例化生产者。
+
+**OrderProducer.java：** 向kafka集群发送订单数据的producer。
 
 - 使用`java.util.Properties`配置并初始化kafka producer实例。
+    - 加入集群节点到broker-list 
+    - 发送的message类型为String，所以设置序列化参数为StringEncoder
 
 - 调用`producer.send()`接口，将缓冲池中的消息异步地发送到broker的指定topic中。
 
@@ -223,10 +228,11 @@ public static void main(String args[]) {
 
 
 ### 3.2 Spark Streaming进行计算和处理
+该系统通过Spark Streaming读取Kafka Producer的消息，转换成可操作的、按照时间段分割的数据流，用批处理的方式处理订单。
 
 **App.java：**
 
-- 通过 JavaStreamingContextFactory构建Streaming context对象，指明应用名称"Order Processing"、时间窗口大小(即批处理时间间隔)为**2s** 。
+- 通过 JavaStreamingContextFactory构建Streaming context对象，指明应用名称"Order Processing"、时间窗口大小(即批处理时间间隔)为**3s** 。
 
   ```java
   SparkConf conf = new SparkConf().setAppName("Order Processing");
@@ -270,7 +276,7 @@ public static void main(String args[]) {
 
 ### 3.3 Zookeeper的事务管理
 
-#### 3.3.1 分布式锁的实现
+#### 3.3.1 分布式锁的实现（LockService.java）
 
 **init()**: 初始化Zookeeper服务器，若服务器上不存在 `/lock` 节点则创建，该节点是一个持久节点(PERSISTENT)
 
@@ -319,7 +325,9 @@ if (stat != null) {
 
   **unlock():** 获取 `/lock` 父节点的所有子节点，删除其中顺序号最小的节点
 
+------
 
+**TODO 锁还在修改** ，结合3.2与3.3.1的部分，Spark集群接收到order processing任务后从master分发给slave，关系见如下示意图：
 
 ![zk&kafka.png](/picture/spark%26zk.png)
 
@@ -355,7 +363,7 @@ public class CurrentChange extends Thread {
 ```
 
 
-  
+
 
 ### 3.4 MySQL存储数据与结果
 
@@ -409,28 +417,35 @@ Caused by: java.lang.IllegalArgumentException: /home/centos/zookeeper/data/myid 
 - 由于dataDir下的myid文件未创建
 - 若日志显示正常却status未显示，可能由于集群模式还未完成选举，等所有机器都启动后再查看
 
-
-
 **Q3: Field "id" doesn't have a default value**
 
 A: 由于使用hibernete将Result表的id列设置为```@GeneratedValue(strategy = GenerationType.IDENTITY)```因此自增属性交由Mysql管理，而生产环境下的Mysql未配置id为AUTO INCREMENT，因此报错，通过```alter table Result modify id int AUTO INCREMENT;```修改完毕，需要保证连接数据库的进程关闭，否则会卡死。
 
-**Q: 发现spark应用消费速度过慢，只有个位数throughput**
+**Q4: 发现spark应用消费速度过慢，只有个位数throughput**
 
 A: 首先排查kafka本身吞吐量，通过kafka-producer-perf-test.sh测试发现kafka的吞吐量正常，其次怀疑任务本身过于耗时，通过不执行任务直接将input的数据print出来，问题没有得到解决，发现由于Dstream的print方法在数量大于10个时后续以省略号表示
 
-**Q: Web请求处理速度过慢，throughput仅有十几**
+**Q5: Web请求处理速度过慢，throughput仅有十几**
 
 A: 由于之前在本机上发送订单请求，，怀疑由于Web Receiver瓶颈，因此将sender的python脚本进行打包，在集群上进行send，打算采用多个Receiver方式，然后发现服务器上send速度很快，因此问题为开发机至服务器间的网络
 
-
-**Q4：产生死锁**
+**Q6: Zookeeper产生死锁**
 
 A：由于共享static变量， 多个worker/多线程拿锁产生问题，没有有效放锁。修改lockService类的实现，删去lockPath的static变量，并且每次zookeeper删除节点时都删除最小节点。
 
 
 
-## 5. Contribution
+## 5. 性能分析（TODO）
+
+5.1 锁优化前：throughput约 25 order/sec
+
+![](/picture/streaming3.png)
+
+![](/picture/streaming2.png)
+
+5.2 锁优化后：
+
+## 6. Contribution
 
 | 学号         | 姓名   | 分工 |
 | ------------ | ------ | ---- |
@@ -439,6 +454,43 @@ A：由于共享static变量， 多个worker/多线程拿锁产生问题，没�
 | 516030910422 | 赵樱   | 水报告 |
 | 516030910367 | 应邦豪 |划水   |
 
+
+
 **项目Github**：https://github.com/sansazhao/Distributed-System-group7
+
+**项目结构及说明：** 
+
+```
+# 预期修改结果？	
+├─Service
+│      CommodityService.java	
+│      ResultService.java
+│      CurrentService.java		zookeeper管理汇率表
+│      LockService.java			zookeeper分布式锁实现
+│      Processor.java			订单处理
+│      HibernateUtil.java		数据库连接
+│      //ZooKeeperPool.java		never used
+│      //TestApp.java
+│
+├─Current						
+│      CurrentApp.java
+│      CurrentChange.java		继承thread，修改汇率的实现
+│  
+├─Entity
+│      Commodity.java
+│      Result.java
+│
+├─Spark
+│      SparkApp.java
+│      OrderProcessor.java
+│      OrderProducer.java
+│      //SimpleLock.java
+│      //SqlTest.java
+│      //WriteLock.java
+│      //Logger.java
+│
+└─Web
+       WebApp.java				kafka producer(发送订单、添加商品)
+```
 
 
