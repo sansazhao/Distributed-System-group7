@@ -31,7 +31,8 @@ public class LockService {
     private static String parentPath = "/lock";
     private static String lockPrefix = "/lock/lock-";
 
-    static public void init() {
+    static public synchronized  void init() {
+        if(zookeeper != null) return;
         zookeeper_server = new String("dist-1:2181,dist-2:2181,dist-3:2181");
 
         try {
@@ -68,7 +69,7 @@ public class LockService {
                 });
                 empty = nodePath.equals(children.get(0));
 
-
+                System.out.println(nodePath + " create the znode");
             if (empty) {
                 System.out.println(nodePath + " acquire the lock");
             }

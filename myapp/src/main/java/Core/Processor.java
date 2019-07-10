@@ -113,7 +113,12 @@ public class Processor {
         ResultService.addResult(result);
         //System.out.println("add result after");
         //System.out.println("unlock before");
+
+
         unlock(lockPath);
+
+
+
         //System.out.println("unlock after");
         return (JSONObject) JSONObject.toJSON(result);
     }
