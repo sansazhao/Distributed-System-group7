@@ -6,6 +6,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.spark.internal.Logging;
 import Core.Current;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -30,8 +32,8 @@ public class Processor {
         return  result;
     }
 
-    private String lock() {
-        return LockService.lock();
+    private String lock(Integer id) {
+        return LockService.lock(id);
     }
     private void unlock(String lockPath) {
         LockService.unlock(lockPath);
@@ -46,8 +48,9 @@ public class Processor {
         List<JSONObject> items = JSON.parseArray(order.getString("items"), JSONObject.class);
         double totalPrice = 0;
 
-        String lockPath = lock();
-        System.out.println("acquire lock over");
+        List<String> lockPaths = new ArrayList<>();
+//        String lockPath = lock();
+//        System.out.println("acquire lock over");
 
         rate.put("RMB", getExchangeRate("RMB"));
         rate.put("USD", getExchangeRate("USD"));
@@ -63,6 +66,7 @@ public class Processor {
             int number = item.getIntValue("number");
             Commodity commodity;
             if (!cache.containsKey(id)) {
+                lockPaths.add(lock(id));
                 commodity = CommodityService.getCommodity(id);
                 cache.put(id, commodity);
             }
@@ -113,7 +117,9 @@ public class Processor {
         ResultService.addResult(result);
         //System.out.println("add result after");
         //System.out.println("unlock before");
-        unlock(lockPath);
+        for (String lockPath : lockPaths) {
+            unlock(lockPath);
+        }
         //System.out.println("unlock after");
         return (JSONObject) JSONObject.toJSON(result);
     }
