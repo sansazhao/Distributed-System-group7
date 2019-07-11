@@ -52,7 +52,7 @@ public class CommodityService {
     public static List<Integer> getCommodityName() {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         Transaction tx = session.beginTransaction();
-        List<Integer> names = (List<Integer>) session.createSQLQuery("select Commodity.id from Commodity commodity").list();
+        List<Integer> names = (List<Integer>) session.createSQLQuery("select commodity.id from Commodity commodity").list();
         tx.commit();
         session.close();
         return names;

@@ -29,7 +29,8 @@ public class LockService {
     private static ZooKeeper zookeeper;
     private static String zookeeper_server;
 
-    static public void init() {
+    static public synchronized  void init() {
+        if(zookeeper != null) return;
         zookeeper_server = new String("dist-1:2181,dist-2:2181,dist-3:2181");
 
         try {
@@ -52,6 +53,7 @@ public class LockService {
                 if (stat == null) {
                     zookeeper.create("/lock/" + id, (id + " lock").getBytes(),
                             ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                    //System.out.println("create lock for " + id);
                 }
             }
             catch (Exception e) {
@@ -89,7 +91,7 @@ public class LockService {
                 });
                 empty = nodePath.equals(children.get(0));
 
-
+                System.out.println(nodePath + " create the znode");
             if (empty) {
                 System.out.println(id.toString() + "/" + nodePath + " acquire the lock");
             }

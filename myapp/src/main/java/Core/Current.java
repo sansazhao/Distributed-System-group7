@@ -66,17 +66,24 @@ public class Current {
         if(zookeeper == null) connectZookeeper();
         String curString = new String(zookeeper.getData("/totalAmount/" + current, false, null));
         Double curDouble = Double.parseDouble(curString);
+        System.out.println("get exchange " + current + "  price " + curString);
         curDouble += value;
         String valueString = curDouble.toString();
+        System.out.println("update exchange " + current + "  price " + valueString);
         zookeeper.setData("/totalAmount/" + current, valueString.getBytes(), -1);
         return curDouble;
     }
 
-    public static void initTotalTxAmount() throws Exception {
+    public static void initTotalTxAmount(){
+        try{
         if(zookeeper == null) connectZookeeper();
         zookeeper.setData("/totalAmount/RMB", "0.0".getBytes(), -1);
         zookeeper.setData("/totalAmount/USD", "0.0".getBytes(), -1);
         zookeeper.setData("/totalAmount/JPY", "0.0".getBytes(), -1);
         zookeeper.setData("/totalAmount/EUR", "0.0".getBytes(), -1);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
     }
 }

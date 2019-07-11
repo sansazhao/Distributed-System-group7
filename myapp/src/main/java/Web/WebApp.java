@@ -4,6 +4,7 @@ package Web;
 import Core.Current;
 import Core.Processor;
 import Entity.Commodity;
+import Entity.Result;
 import fi.iki.elonen.NanoHTTPD;
 import java.util.Map;
 import java.util.HashMap;
@@ -78,7 +79,22 @@ public class WebApp extends NanoHTTPD{
             }
         }else if(uri.startsWith("/get/result")){
             Map<String, String> parms = session.getParms();
-            return newFixedLengthResponse(GetResult());
+            if(parms.get("id") != null){
+                int id = Integer.parseInt(parms.get("id"));
+                Result result = ResultService.getResultById(id);
+                if(result == null) return newFixedLengthResponse("no result for this id");
+                JSONObject json = new JSONObject();
+
+                json.put("id",result.getId());
+                json.put("initiator",result.getInitiator());
+                json.put("paid",result.getPaid());
+                json.put("success",result.getSuccess());
+                json.put("user_id",result.getUserId());
+                return newFixedLengthResponse(json.toJSONString());
+            }else{
+                return newFixedLengthResponse("no id specified");
+            }
+
         }else if(uri.startsWith("/get/totalTxAmount")){
             Map<String, String> parms = session.getParms();
             if(parms.get("Initiator") != null){
@@ -113,7 +129,7 @@ public class WebApp extends NanoHTTPD{
     void PostOrder(JSONObject json){
 
     }
-    String GetResult(){
+    String GetResultById(){
         return "result";
     }
 }
