@@ -3,7 +3,7 @@
 ### 实验背景  
 假设有一个热门的国际购物平台，它需要处理高并发的购物订单。因为它是为世界各地的用户设计，它应该能够支持不同的货币结算。当用户购买商品时，系统会根据当前汇率将原价格兑换成目标货币的价格。
 
-### 实验目的 
+### 实验目的
 
 基于4台云服务器，使用Zookeeper, Kafka, Spark服务框架和MySQL，设计并实现一个分布式交易结算系统，功能包括接收和处理贸易订单、记录所有交易结果和总交易金额、定时更新汇率，在实现基本功能的基础上尽可能地优化throughput和latency、支持高并发。
 
@@ -36,7 +36,7 @@
 ### 1.1 云服务器配置
 
 - centos
-- 8GB DRAM * 4 
+- 8GB DRAM * 4
 - 4-core CPU * 4
 
 ### 1.2 集群概览
@@ -51,7 +51,7 @@
 | dist-4 		|  			  |  	  |	    |
 
 
-![spark&zk.png](/picture/total.png)
+![spark&zk.png](./picture/total.png)
 
 
 ## 2 Install and Configuration
@@ -181,6 +181,35 @@ create table result(
 
 ```
 
+### 2.6 启动zookeeper,kafka,spark服务
+```shell
+# your/path/to/zookeeper/bin
+./zkServer.sh start
+```
+```shell
+# your/path/to/kafka/bin
+./kafka-server-start.sh ../config/server.properties
+```
+spark启动前需要在master节点上配置slaves文件
+```shell
+# your/path/to/spark/conf/slaves
+[worker1-hostname]
+[worker2-hostname]
+[worker3-hostname]
+...
+```
+启动服务
+```shell
+# your/path/to/spark/sbin
+./start-all.sh
+```
+这个脚本会自动启动各个slave上的worker,不然需要在各个slaves上各自启动worker
+
+提交Spark应用
+```
+spark-submit --master spark://[master-node]:7077 [yourapp].jar
+```
+
 
 
 ## 3. Program Design
@@ -193,7 +222,7 @@ kafka提供了许多简易的API可以直接调用，使用kafka.producer API实
 **OrderProducer.java：** 向kafka集群发送订单数据的producer。
 
 - 使用`java.util.Properties`配置并初始化kafka producer实例。
-    - 加入集群节点到broker-list 
+    - 加入集群节点到broker-list
     - 发送的message类型为String，所以设置序列化参数为StringEncoder
 
 - 调用`producer.send()`接口，将缓冲池中的消息异步地发送到broker的指定topic中。
@@ -252,18 +281,20 @@ public static void main(String args[]) {
          			KafkaUtils.createDirectStream(jssc,
      				"dist-1:2181,dist-2:2181,dist-3:2181", "spark_receiver", topicMap);
   ```
+![](./picture/spark.png)
 
-  <img src="/picture/spark.png" width="700px"/>
 
 - 对messages进行map操作按时间切分、转换成DStream，再进行map操作传入订单处理模块，进行处理返回结果的DStream。
 
     ```java
     JavaDStream<String> results = lines.map(OrderProcessor::process);
     ```
-  
+
 - **DStream：** 是Spark Streaming中的一个基本抽象，代表数据流，隐藏了实现细节。DStream可以从kafka等输入源获得，也可以转换得到。在 DStream 内部维护了一组离散的以时间轴为键的 RDD 序列，每个RDD 包含了指定时间段内的数据流，我们对于 DStream 的各种操作最终都会映射到内部的 RDD 上，最终提交给Spark处理。
 
-  <img src="/picture/rdd.png" width="700px"/>
+
+![](./picture/rdd.png)
+
 
 - 配置后调用start()正式启动Spark Streaming。
 
@@ -287,7 +318,7 @@ if (stat == null) {
 }
 ```
 
-**lock():** 
+**lock():**
 
 - 在父节点 `/lock` 下创建一个临时顺序子节点(EPHEMERAL_SEQUENTIAL)，该节点会在客户端断开连接时删除，并且服务器会给该节点加上一个全局唯一的顺序后缀。指定子节点的前缀，最终创建的节点路径为`/lock/lock-0000000001`.  
 
@@ -329,7 +360,7 @@ if (stat != null) {
 
 **TODO 锁还在修改** ，结合3.2与3.3.1的部分，Spark集群接收到order processing任务后从master分发给slave，关系见如下示意图：
 
-![zk&kafka.png](/picture/spark%26zk.png)
+![zk&kafka.png](./picture/spark%26zk.png)
 
 
 
@@ -370,27 +401,32 @@ public class CurrentChange extends Thread {
 - MySQL位于dist-1上，集群通过hibernate配置连接3306端口的数据库。
 - Result的id设置为AUTO_INCREMENT自增。
 
-<img src="/picture/tables.png"  style="margin-left:0px"/>
 
-<img src="/picture/commodity.png" width="450px" style="margin-left:0px"/>
-
-<img src="/picture/result.png" width="450px" style="margin-left:0px"/>
+![](./picture/tables.png)
 
 
+
+![](./picture/commodity.png)
+
+![](./picture/result.png)
+
+此项目中使用zookeeper实现分布式锁作为应用层的锁，因此在数据库层面不需要增加隔离
 
 ### 3.5 测试数据与testfile
 
-**order json：** TODO
+**order json：** input-0.json input-1.json input-2.json
 
 **LockTest.java：** 用于测试zookeeper锁实现的正确性、可扩展性。
 
 
 
 
-### 3.6 优化latency与throughput
+### 3.6 分析latency与throughput
+**Latency:** 由于kafka的高性能，latency主要来自于Spark Streaming自身的流处理中，由于Spark Streaming采用batch的方式，并不是来一条处理一条的真实时处理，因此latency主要取决于process time以及batch interval
 
+**Throughtput:** 由于应用process time相对较长，因此单个Spark Receiver足以满足任务的吞吐量需求，因此主要瓶颈仍然在于process time
 
-
+总结：优化重点在于减少**process time**
 
 ## 4. Problems
 
@@ -415,7 +451,7 @@ Caused by: java.lang.IllegalArgumentException: /home/centos/zookeeper/data/myid 
 
 ```
 - 由于dataDir下的myid文件未创建
-- 若日志显示正常却status未显示，可能由于集群模式还未完成选举，等所有机器都启动后再查看
+- 若日志显示正常status却未显示，可能由于集群模式还未完成选举，等所有机器都启动后再查看
 
 **Q3: Field "id" doesn't have a default value**
 
@@ -435,13 +471,17 @@ A：由于共享static变量， 多个worker/多线程拿锁产生问题，没�
 
 
 
+
+
 ## 5. 性能分析（TODO）
 
-5.1 锁优化前：throughput约 25 order/sec
+由3.6分析可知，优化主要需要分析任务处理时间
 
-![](/picture/streaming3.png)
+5.1 锁优化前：throughput约 17 order/sec
 
-![](/picture/streaming2.png)
+![](./picture/streaming3.png)
+
+![](./picture/streaming2.png)
 
 5.2 锁优化后：
 
@@ -458,12 +498,12 @@ A：由于共享static变量， 多个worker/多线程拿锁产生问题，没�
 
 **项目Github**：https://github.com/sansazhao/Distributed-System-group7
 
-**项目结构及说明：** 
+**项目结构及说明：**
 
 ```
-# 预期修改结果？	
+# 预期修改结果？
 ├─Service
-│      CommodityService.java	
+│      CommodityService.java
 │      ResultService.java
 │      CurrentService.java		zookeeper管理汇率表
 │      LockService.java			zookeeper分布式锁实现
@@ -492,5 +532,3 @@ A：由于共享static变量， 多个worker/多线程拿锁产生问题，没�
 └─Web
        WebApp.java				kafka producer(发送订单、添加商品)
 ```
-
-
