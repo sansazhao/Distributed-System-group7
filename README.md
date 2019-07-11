@@ -422,7 +422,7 @@ public class CurrentChange extends Thread {
 
 
 ### 3.6 分析latency与throughput
-**Latency:** 由于kafka的高性能，latency主要来自于Spark Streaming自身的流处理中，由于Spark Streaming采用batch的方式，并不是来一条处理一条的真实时处理，因此latency主要取决于process time以及batch interval
+**Latency:** 由于kafka的高性能，latency主要来自于Spark Streaming自身的流处理中，由于Spark Streaming采用batch的方式，并不是来一条处理一条的真实时处理(如Storm)，因此latency主要取决于process time以及batch interval，因此在这将latency视为单个Record处理的时间的平均值，可以通过Spark UI查看得到
 
 **Throughtput:** 由于应用process time相对较长，因此单个Spark Receiver足以满足任务的吞吐量需求，因此主要瓶颈仍然在于process time
 
@@ -476,6 +476,18 @@ A：由于共享static变量， 多个worker/多线程拿锁产生问题，没�
 ## 5. 性能分析（TODO）
 
 由3.6分析可知，优化主要需要分析任务处理时间
+
+2w条order
+Read Uncommitted + no lock without        forceSync: 01:20
+Read Repeatable  + no lock without        forceSync: 01:22
+Read Uncommitted + no lock with           forceSync: 02:40
+Read Repeatable  + no lock with           forceSync: 03:04
+Read Uncommitted + commodity lock with    forceSync: 30~min
+Read Uncommitted + commodity lock without forceSync: 02:28
+Read Repeatable  + commodity lock without forceSync: 02:26
+Read Uncommitted + single lock with       forceSync: 17:30
+Read Uncommitted + single lock without    forceSync: 05:22
+Read Repeatable  + single lock without    forceSync: 05:28
 
 5.1 锁优化前：throughput约 17 order/sec
 
