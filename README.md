@@ -520,6 +520,8 @@ ps2: 由于在开启forceSync模式下overhead主要来自于zookeeper的操作�
 
 这里是运行时间分析图
 
+可以看到在Single Lock模式下加锁解锁时间相对较短(加锁时间长是由于将线程等待时间也算进去了)，平均操作只占10-20ms，这点也可以从更新Tx的时间上得到验证，加锁解锁与更新Tx都相当于一个zookeeper写入操作，而在两种模式下更新Tx的时间都相当稳定为10-20ms
+
 ### 5.3 Read Repeatable + commodity lock without forceSync
 
 在前一个版本的基础上配置zoo.cfg
