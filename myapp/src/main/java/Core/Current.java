@@ -66,10 +66,10 @@ public class Current {
         if(zookeeper == null) connectZookeeper();
         String curString = new String(zookeeper.getData("/totalAmount/" + current, false, null));
         Double curDouble = Double.parseDouble(curString);
-        System.out.println("get exchange " + current + "  price " + curString);
+        //System.out.println("get exchange " + current + "  price " + curString);
         curDouble += value;
         String valueString = curDouble.toString();
-        System.out.println("update exchange " + current + "  price " + valueString);
+        //System.out.println("update exchange " + current + "  price " + valueString);
         zookeeper.setData("/totalAmount/" + current, valueString.getBytes(), -1);
         return curDouble;
     }

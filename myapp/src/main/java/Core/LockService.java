@@ -2,12 +2,13 @@ package Core;
 
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-
+import java.util.concurrent.TimeUnit;
 
 
 public class LockService {
@@ -35,7 +36,7 @@ public class LockService {
 
         try {
             zookeeper = new ZooKeeper(zookeeper_server,2000, null);
-            Stat stat = zookeeper.exists("/lock", null);
+            Stat stat = zookeeper.exists("/lock", false);
             if (stat == null) {
                 zookeeper.create("/lock", "for lock".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             }
@@ -66,7 +67,10 @@ public class LockService {
         String localLockPath = "";
         String parentPath = "/lock/" + id.toString();
         String lockPrefix = "/lock/" + id.toString() + "/lock-";
+        String prePath = "";
         String lockPath;
+
+        //System.out.println("enter lock");
         try {
 
             CountDownLatch localLatch = new CountDownLatch(1);
@@ -80,37 +84,45 @@ public class LockService {
                 List<String> children = zookeeper.getChildren(parentPath, false);
                 Collections.sort(children, new Comparator<String>() {
                     public int compare(String left, String right) {
-                        System.out.println(left);
-                        System.out.println(right);
+                        //System.out.println(left);
+                        //System.out.println(right);
                         String leftId = left.substring("lock-".length());
                         String rightId = right.substring("lock-".length());
-                        System.out.println(leftId);
-                        System.out.println(rightId);
+                        //System.out.println(leftId);
+                        //sSystem.out.println(rightId);
                         return leftId.compareTo(rightId);
                     }
                 });
                 empty = nodePath.equals(children.get(0));
 
-                System.out.println(nodePath + " create the znode");
+                //System.out.println(nodePath + " create the znode");
             if (empty) {
-                System.out.println(id.toString() + "/" + nodePath + " acquire the lock");
+                //System.out.println(id.toString() + "/" + nodePath + " acquire the lock");
             }
             else {
                 Integer preValue = Integer.valueOf(lockId) - 1;
                 String preId = String.format("%010d", preValue);
-                String prePath = lockPrefix + preId;
+                prePath = lockPrefix + preId;
                 System.out.println(lockPath.substring("/lock/".length()) +
                         " is watching " + prePath.substring("/lock/".length()));
 
-                zookeeper.exists(prePath, new LockWatcher(localLatch));
+                Stat stat = zookeeper.exists(prePath, new LockWatcher(localLatch));
+                if(stat == null)
+                    empty = true;
 
             }
 
             }
             localLockPath = lockPath;
             if(!empty){
-                localLatch.await();
-                System.out.println(String.format("%s lock awake",localLockPath.substring("/lock/".length())));
+                long startSleep = System.currentTimeMillis();
+                while(!localLatch.await(200,TimeUnit.MILLISECONDS)){
+                    Stat stat = zookeeper.exists(prePath, false);
+                    if(stat == null) break;
+                }
+                long endSleep = System.currentTimeMillis();
+
+                System.out.println(String.format("%s lock awake 睡眠时间为 %dms",localLockPath.substring("/lock/".length()), endSleep - startSleep));
             }
 
         } catch (Exception e) {
@@ -124,7 +136,7 @@ public class LockService {
 
             synchronized (key) {
                 if(zookeeper == null) init();
-                System.out.println(lockpath.substring("/lock".length() + 1) + " release the lock");
+                //System.out.println(lockpath.substring("/lock".length() + 1) + " release the lock");
                 //latch = new CountDownLatch(1);
                 zookeeper.delete(lockpath, -1);
             }

@@ -36,7 +36,7 @@ import java.util.Arrays;
 import java.util.regex.Pattern;
 
 import Spark.OrderProcessor;
-
+import java.util.Date;
 import javax.activation.DataSource;
 import javax.sound.midi.Receiver;
 
@@ -69,7 +69,7 @@ public class App {
         JavaSparkContext sc = new JavaSparkContext(conf);
         sc.setLogLevel("WARN");
 
-        JavaStreamingContext jssc = new JavaStreamingContext(sc, Durations.seconds(3));
+        JavaStreamingContext jssc = new JavaStreamingContext(sc, Durations.seconds(10));
         Map<String, Integer> topicMap = new HashMap<String,Integer>();
         topicMap.put("kafka_spark",20);
 
@@ -77,14 +77,18 @@ public class App {
                 KafkaUtils.createStream(jssc,
                         "dist-1:2181,dist-2:2181,dist-3:2181", "spark_receiver", topicMap);
 
-
-
         JavaDStream<String> lines = messages.map(Tuple2::_2);
         JavaDStream<String> results = lines.map(OrderProcessor::process);
 
 
         //JavaPairDStream<String, Integer> wordCounts = words.mapToPair(s -> new Tuple2<>(s, 1)).reduceByKey((i1, i2) -> (i1 + i2));
         System.out.println("test");
+        results.foreachRDD(rdd -> {
+            rdd.foreach(str ->{
+                System.out.println(str);
+            });
+        });
+
         results.count().print();
         //results.print();
 

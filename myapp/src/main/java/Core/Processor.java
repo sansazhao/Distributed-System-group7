@@ -16,7 +16,7 @@ import java.util.Comparator;
 public class Processor {
 
     private HashMap<String, Double> rate = new HashMap<>();
-
+    private  boolean isSingleLock = true;
     private Double getExchangeRate(String initiator) {
 
 //        if (initiator.equals("RMB")) return 2.0;
@@ -35,11 +35,20 @@ public class Processor {
     }
 
     private String lock(Integer id) {
+        //return "";
         return LockService.lock(id);
     }
     private void unlock(String lockPath) {
         LockService.unlock(lockPath);
     }
+
+    public void enableSingleLock(){
+        isSingleLock = true;
+    }
+    public void enableCommodityLock(){
+        isSingleLock = false;
+    }
+
 
     public JSONObject process(String in) {
         long startTime = System.currentTimeMillis();
@@ -73,12 +82,17 @@ public class Processor {
         HashMap<Integer, Commodity> cache = new HashMap<>();
 
         long lockStartTime = System.currentTimeMillis();
-
-        for (JSONObject item : items) {
-            lockPaths.add(lock(item.getIntValue("id")));
+        String lock_path = "";
+        if( !isSingleLock) {
+            for (JSONObject item : items) {
+                lockPaths.add(lock(item.getIntValue("id")));
+            }
+        }else{
+            lock_path = lock(1);
         }
+
         long lockEndTime = System.currentTimeMillis();
-        System.out.println("加锁运行时间："+(lockEndTime-lockStartTime)+"ms");
+        //System.out.println("加锁运行时间："+(lockEndTime-lockStartTime)+"ms");
 
 
         for (JSONObject item : items) {
@@ -111,14 +125,16 @@ public class Processor {
             //System.out.println(totalPrice);
 
         }
-
+        long updateStartTime = System.currentTimeMillis();
+        long updateEndTime = System.currentTimeMillis();
         if (success) {
             for (int id : cache.keySet()) {
                 CommodityService.updateCommodity(cache.get(id));
             }
             try {
-                System.out.println("update tx amount initiator " + initiator + " total price " + totalPrice);
+                //System.out.println("update tx amount initiator " + initiator + " total price " + totalPrice);
                 Current.updateTotalTxAmount(initiator, totalPrice);
+                updateEndTime = System.currentTimeMillis();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -143,18 +159,29 @@ public class Processor {
 
         long unlockStartTime = System.currentTimeMillis();
 
-        for (String lockPath : lockPaths) {
-            unlock(lockPath);
+        if(!isSingleLock){
+            for (String lockPath : lockPaths) {
+                unlock(lockPath);
+            }
+        }else{
+            unlock(lock_path);
         }
         long unlockEndTime = System.currentTimeMillis();
 
 
 
-        System.out.println("解锁运行时间："+(unlockEndTime-unlockStartTime)+"ms");
+        //System.out.println("解锁运行时间："+(unlockEndTime-unlockStartTime)+"ms");
         //System.out.println("unlock after");
 
         long endTime = System.currentTimeMillis();
-        System.out.println("任务运行时间："+(endTime-startTime)+"ms");
+        //System.out.println("任务运行时间："+(endTime-startTime)+"ms");
+        /*
+        JSONObject time_result = new JSONObject();
+        time_result.put("加锁时间",lockEndTime - lockStartTime);
+        time_result.put("解锁时间",unlockEndTime - unlockStartTime);
+        time_result.put("任务时间",endTime - startTime);
+        time_result.put("更新Tx时间",updateEndTime - updateStartTime);
+        */
 
         return (JSONObject) JSONObject.toJSON(result);
     }

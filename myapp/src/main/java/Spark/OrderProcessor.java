@@ -12,6 +12,7 @@ public class OrderProcessor {
     static Processor processor;
     static public void init(){
         processor = new Processor();
+        processor.enableSingleLock();
         try {
             //ResultService.initResult();
             //Current.initTotalTxAmount();

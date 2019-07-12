@@ -14,6 +14,7 @@
         <property name="format_sql">true</property>
         <property name="hbm2ddl.auto">update</property>
         <property name="hibernate.current_session_context_class">thread</property>
+        <property name="hibernate.connection.isolation">4</property>
 
         <mapping class="Entity.Commodity"/>
         <mapping class="Entity.Result"/>
