@@ -272,7 +272,7 @@ public static void main(String args[]) {
 
 - 创建inputDstream，定义数据源。本项目利用KafkaStream的API，创建Kafka topic后，直接读取kafka。
 
-  **TODO: offset的保存，提及优化**
+
 
   ```java
   Map<String, Integer> topicMap = new HashMap<String, Integer>();
@@ -343,18 +343,21 @@ if (nodePath.equals(children.get(0))) {
 }
 ```
 
-- 若当前节点不是最小的节点，则创建 `LockWatcher` 来监听前一个节点的删除事件，接着 `LockWatcher` 会调用 `latch.countDown()` 使得正在等待 `latch` 的 `lock()`函数能够继续执行下去获得锁
+- 若当前节点不是最小的节点，则创建 `LockWatcher` 来监听前一个节点的删除事件，接着 `LockWatcher` 会调用 `latch.countDown()` 使得正在等待 `latch` 的 `lock()`函数能够继续执行下去获得锁，由于分布式并发场景下有可能在一个结点await前先前结点先被delete，造成死锁，因此增加超时重查机制
 
 ```java
 CountDownLatch latch = new CountDownLatch(1);
 LockWatcher lockWatcher = new LockWatcher(latch);
 Stat stat = zookeeper.exists(prePath, lockWatcher);
 if (stat != null) {    
-    latch.await();
+    while(!localLatch.await(200,TimeUnit.MILLISECONDS)){
+        stat = zookeeper.exists(prePath, false);
+        if(stat == null) break;
+    }
 }
 ```
 
-  **unlock():** 获取 `/lock` 父节点的所有子节点，删除其中顺序号最小的节点
+  **unlock():** 删除自己取得的`lockPath`锁节点
 
 ------
 
@@ -511,6 +514,8 @@ ps2: 由于在开启forceSync模式下overhead主要来自于zookeeper的操作�
 
 后面每个版本配一个和前面版本的对比图，一张柱状图两个柱这样子
 
+------
+
 ### 5.2 commodity lock with forceSync
 
 在前一个版本的基础上实现了对商品单独加锁
@@ -520,7 +525,9 @@ ps2: 由于在开启forceSync模式下overhead主要来自于zookeeper的操作�
 
 这里是运行时间分析图
 
-可以看到在Single Lock模式下加锁解锁时间相对较短(加锁时间长是由于将线程等待时间也算进去了)，平均操作只占10-20ms，这点也可以从更新Tx的时间上得到验证，加锁解锁与更新Tx都相当于一个zookeeper写入操作，而在两种模式下更新Tx的时间都相当稳定为10-20ms
+可以看到在Single Lock模式下加锁解锁时间相对较短(加锁时间长是由于将线程等待时间也算进去了)，平均操作只占20-30ms，这点也可以从更新Tx的时间上得到验证，加锁解锁与更新Tx都相当于一个zookeeper写入操作，而在两种模式下更新Tx的时间都相当稳定为20-30ms
+
+------
 
 ### 5.3 Read Repeatable + commodity lock without forceSync
 
@@ -533,6 +540,8 @@ forceSync=no
 
 #### 分析
 可以观察到Thorughtput大幅度增加，tradeoff为zookeeper的可靠性降低，如果一个节点崩溃重启可能无法从本地数据recover，但我们采用三台作为一个集群，如果只有一台崩溃可以从其他两台上恢复数据，因此可靠性仍然可以保证
+
+------
 
 ### 5.4 Read Uncommitted + commodity lock without forceSync
 
