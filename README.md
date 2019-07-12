@@ -478,16 +478,16 @@ A：由于共享static变量， 多个worker/多线程拿锁产生问题，没�
 由3.6分析可知，优化主要需要分析任务处理时间
 
 2w条order
-Read Uncommitted + no lock without        forceSync: 01:20
-Read Repeatable  + no lock without        forceSync: 01:22
-Read Uncommitted + no lock with           forceSync: 02:40
-Read Repeatable  + no lock with           forceSync: 03:04
-Read Uncommitted + commodity lock with    forceSync: 30~min
-Read Uncommitted + commodity lock without forceSync: 02:28
-Read Repeatable  + commodity lock without forceSync: 02:26
-Read Uncommitted + single lock with       forceSync: 17:30
-Read Uncommitted + single lock without    forceSync: 05:22
-Read Repeatable  + single lock without    forceSync: 05:28
+Read Uncommitted + no lock without        forceSync: 01:20  Throughtput: 250.0
+Read Repeatable  + no lock without        forceSync: 01:22  Throughtput: 243.9
+Read Uncommitted + no lock with           forceSync: 02:40  Throughtput: 125.0
+Read Repeatable  + no lock with           forceSync: 03:04  Throughtput: 108.7
+Read Uncommitted + commodity lock with    forceSync: 30~min Throughtput: 11.1
+Read Uncommitted + commodity lock without forceSync: 02:28  Throughtput: 135.1
+Read Repeatable  + commodity lock without forceSync: 02:26  Throughtput: 137.0
+Read Uncommitted + single lock with       forceSync: 17:30  Throughtput: 19.0
+Read Uncommitted + single lock without    forceSync: 05:22  Throughtput: 62.1
+Read Repeatable  + single lock without    forceSync: 05:28  Throughtput: 61.0
 
 5.1 锁优化前：throughput约 17 order/sec
 
