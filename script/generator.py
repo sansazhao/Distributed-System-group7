@@ -4,7 +4,7 @@ import json
 import random
 import time
 NUM_OF_FILES = 3
-NUM_OF_ORDERS = 100000
+NUM_OF_ORDERS = 20000
 item_ids = [str(i) for i in range(1,5000)]
 total_map = {}
 
