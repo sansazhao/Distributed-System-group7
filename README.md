@@ -48,7 +48,7 @@
 | dist-1 		|  	✔		  |  ✔   |master|
 | dist-2 		| ✔ 		  | ✔    |slave|
 | dist-3 		| ✔   		  | ✔    |slave|
-| dist-4 		|  			  |  	  |	    |
+| dist-4 		|  			  |  	  |slave|	    |
 
 
 ![spark&zk.png](./picture/total.png)
@@ -469,33 +469,75 @@ A: 由于之前在本机上发送订单请求，，怀疑由于Web Receiver瓶�
 
 A：由于共享static变量， 多个worker/多线程拿锁产生问题，没有有效放锁。修改lockService类的实现，删去lockPath的static变量，并且每次zookeeper删除节点时都删除最小节点。
 
+**Q7: 在master节点上使用start-all.sh但Worker没有启动**
+
+A: 由于master默认采用主机名作为连接地址，而openstack主机名采用[实例名].novalocal的格式，因此Worker启动无法找到master而启动失败
+
+**Q8:**
 
 
 
+## 5. 性能分析
 
-## 5. 性能分析（TODO）
-
-由3.6分析可知，优化主要需要分析任务处理时间
+由3.6分析可知，latency ~= 0.5 * Batch Interval + processtime,而throughput很大程度上依赖于processtime，优化主要需要分析任务处理时间
 
 2w条order
-Read Uncommitted + no lock without        forceSync: 01:20  Throughtput: 250.0
-Read Repeatable  + no lock without        forceSync: 01:22  Throughtput: 243.9
-Read Uncommitted + no lock with           forceSync: 02:40  Throughtput: 125.0
-Read Repeatable  + no lock with           forceSync: 03:04  Throughtput: 108.7
-Read Uncommitted + commodity lock with    forceSync: 30~min Throughtput: 11.1
-Read Uncommitted + commodity lock without forceSync: 02:28  Throughtput: 135.1
-Read Repeatable  + commodity lock without forceSync: 02:26  Throughtput: 137.0
-Read Uncommitted + single lock with       forceSync: 17:30  Throughtput: 19.0
-Read Uncommitted + single lock without    forceSync: 05:22  Throughtput: 62.1
-Read Repeatable  + single lock without    forceSync: 05:28  Throughtput: 61.0
+</br>Read Uncommitted + no lock without        forceSync: 01:20  Throughtput: 250.0
+</br>Read Repeatable  + no lock without        forceSync: 01:22  Throughtput: 243.9
+</br>Read Uncommitted + no lock with           forceSync: 02:40  Throughtput: 125.0
+</br>Read Repeatable  + no lock with           forceSync: 03:04  Throughtput: 108.7
+</br>Read Uncommitted + commodity lock with    forceSync: 30~min Throughtput: 11.1
+</br>Read Uncommitted + commodity lock without forceSync: 02:28  Throughtput: 135.1
+</br>Read Repeatable  + commodity lock without forceSync: 02:26  Throughtput: 137.0
+</br>Read Uncommitted + single lock with       forceSync: 17:30  Throughtput: 19.0
+</br>Read Uncommitted + single lock without    forceSync: 05:22  Throughtput: 62.1
+</br>Read Repeatable  + single lock without    forceSync: 05:28  Throughtput: 61.0
 
-5.1 锁优化前：throughput约 17 order/sec
+ps: 由于latency不好测量并且由于取决于Batch Interval，对Spark应用来说并不追求精确到秒级别的latency，因此这里选择Throughtput作为测试指标
+
+ps2: 由于在开启forceSync模式下overhead主要来自于zookeeper的操作开销，数据库事务隔离级别影响可以忽略，因此仅测试了Read Repeatable
+
+
+
+### 5.1 single lock with forceSync
 
 ![](./picture/streaming3.png)
 
 ![](./picture/streaming2.png)
 
-5.2 锁优化后：
+#### 分析
+由于对整个表加了锁，相当于每个订单都串行执行，因此虽然通过Spark启动多个Executor并行处理多个Task，却没有利用到并行，由于应用只会涉及到更新自己订单的商品，因此只要对每个商品单独加锁，在没有冲突的情况下就可以并行处理
+
+
+后面每个版本配一个和前面版本的对比图，一张柱状图两个柱这样子
+
+### 5.2 commodity lock with forceSync
+
+在前一个版本的基础上实现了对商品单独加锁
+
+#### 分析
+可以观察到Throughput反而降低，经过检查发现虽然加入商品锁之后各个任务之间可以并行，但由于任务处理时间大部分都是zookeeper的写入操作(包括create以及delete)，因此商品锁相较于单个全局锁多了几倍的overhead，throughput反而下降
+
+这里是运行时间分析图
+
+### 5.3 Read Repeatable + commodity lock without forceSync
+
+在前一个版本的基础上配置zoo.cfg
+``` shell
+# your/path/tp/zookeeper/conf/zoo.cfg
+forceSync=no
+```
+这个参数的作用是强制将zookeeper的写入操作持久化并且保持顺序，因此如果有多个写入操作并发，后面的写入操作需要等待前面的写入forceSync完之后才能forceSync并且返回，造成latency增加
+
+#### 分析
+可以观察到Thorughtput大幅度增加，tradeoff为zookeeper的可靠性降低，如果一个节点崩溃重启可能无法从本地数据recover，但我们采用三台作为一个集群，如果只有一台崩溃可以从其他两台上恢复数据，因此可靠性仍然可以保证
+
+### 5.4 Read Uncommitted + commodity lock without forceSync
+
+将Mysql的事务隔离级别降到最低，因为我们已经在应用层实现了锁，因此不需要数据库层面为我们提供隔离
+
+#### 分析
+Throughtput有一定提升但有限，因为数据库操作本身占用时间便不大，并且在我们的应用中将每一次读或写操作单独作为一个事务，因此事务之间的冲突本身就不多
 
 ## 6. Contribution
 
