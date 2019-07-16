@@ -1,7 +1,10 @@
 ## Lab5: 分布式事务管理系统	-group7
 
 ### 实验背景  
+
 假设有一个热门的国际购物平台，它需要处理高并发的购物订单。因为它是为世界各地的用户设计，它应该能够支持不同的货币结算。当用户购买商品时，系统会根据当前汇率将原价格兑换成目标货币的价格。
+
+
 
 ### 实验目的
 
@@ -10,34 +13,14 @@
 
 
 
-
-## TODO
-
--  ~~配置完成zookeeper + kafka + spark streaming~~
--  ~~用spark streaming消费kafka的topic数据~~
--  ~~使用zookeeper存储并写入汇率数据~~
--  ~~使用mysql存储持久化数据~~
--  ~~通过zookeeper实现访问商品信息前加锁~~
--  ~~生成随机订单数据文件~~
--  ~~在应用开始时重置数据库~~
--  ~~通过http sender发送订单数据~~
--  ~~通过http receiver接受数据并发送给kafka~~
--  ~~通过zookeeper实现total transaction num的查询~~
--  ~~启动并行单元实时更改汇率数据~~
--  ~~在单机系统下完成订单处理~~
--  **~~在分布式系统下完成订单处理 (完成基本任务)~~**
--  使用spark streaming的Direct API方式与kafka连接
--  采用分布式的文件系统(eg. hdfs)
--  采用分布式的Mysql(通过zookeeper管理)
--  使用不同的spark集群配置(eg. yarn mesos k8s)
-
-
 ## 1 System Environment
 ### 1.1 云服务器配置
 
 - centos
 - 8GB DRAM * 4
 - 4-core CPU * 4
+
+
 
 ### 1.2 集群概览
 
@@ -144,9 +127,7 @@ dist-3
 ```
 在三台机器上都配置slaves文件
 
-### 2.4 安装Hadoop(optional)
-
-### 2.5 配置Mysql
+### 2.4 配置Mysql
 
 选择使用dist-1作为数据库服务器，本地配置mysql。
 
@@ -178,10 +159,10 @@ create table result(
   initiator VARCHAR(5) NULL,
   success   VARCHAR(5) NULL,
   paid      DOUBLE     NULL) ENGINE = InnoDB;
-
 ```
 
-### 2.6 启动zookeeper,kafka,spark服务
+### 2.5 启动zookeeper, kafka, spark服务
+
 ```shell
 # your/path/to/zookeeper/bin
 ./zkServer.sh start
@@ -206,6 +187,7 @@ spark启动前需要在master节点上配置slaves文件
 这个脚本会自动启动各个slave上的worker,不然需要在各个slaves上各自启动worker
 
 提交Spark应用
+
 ```
 spark-submit --master spark://[master-node]:7077 [yourapp].jar
 ```
@@ -219,7 +201,17 @@ spark-submit --master spark://[master-node]:7077 [yourapp].jar
 
 kafka提供了许多简易的API可以直接调用，使用kafka.producer API实例化生产者。
 
-**OrderProducer.java：** 向kafka集群发送订单数据的producer。
+**Web/WebApp.java：** 向kafka集群发送订单数据的producer。
+
+override NanoHTTPD.Response serve函数，使web server有如下功能：
+
+| 功能                 | web url            |
+| -------------------- | ------------------ |
+| 清空数据库           | /clear/database    |
+| 发送订单请求         | /post/order        |
+| 向数据库中插入新商品 | /insert/commodity  |
+| 获取结果             | /get/result        |
+| 获取事务总量         | /get/totalTxAmount |
 
 - 使用`java.util.Properties`配置并初始化kafka producer实例。
     - 加入集群节点到broker-list
@@ -234,23 +226,21 @@ import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 
-public static void main(String args[]) {
+public WebApp(int port) throws IOException{
+     super(port);
      Properties properties = new Properties(); //--2
      properties.put("metadata.broker.list","dist-1:9092,dist-2:9092,dist-3:9092");
      properties.put("serializer.class","kafka.serializer.StringEncoder");
      properties.put("request.require.acks","1");
      ProducerConfig config=new ProducerConfig(properties);
      producer=new Producer<>(config);
-     while (true) {
-     	String message = order();
-        producer.send(new KeyedMessage<>("kafka_spark",message));
-        System.out.println("sent " + message);
-        try {
-            Thread.sleep(1000);
-        }catch (InterruptedException e){
-            e.printStackTrace();
-        }
-     }
+}
+static public void main(String[] args){
+    try {
+        new WebApp(30441).start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
 }
 ```
 
@@ -361,7 +351,7 @@ if (stat != null) {
 
 ------
 
-**TODO 锁还在修改** ，结合3.2与3.3.1的部分，Spark集群接收到order processing任务后从master分发给slave，关系见如下示意图：
+结合3.2与3.3.1的部分，Spark Streaming从Kafka producer接收到order processing任务后，从master分发给合适的slave，slave中的worker获取zookeeper的锁之后可以访问MySQL数据库，关系见如下示意图：
 
 ![zk&kafka.png](./picture/spark%26zk.png)
 
@@ -403,45 +393,135 @@ public class CurrentChange extends Thread {
 
 - MySQL位于dist-1上，集群通过hibernate配置连接3306端口的数据库。
 - Result的id设置为AUTO_INCREMENT自增。
+- 此项目中使用zookeeper实现分布式锁作为应用层的锁，因此在数据库层面不需要增加隔离。
+
+ <img src="/picture/tables.png" style="margin-left:0px"/> 
+
+ <img src="/picture/commodity.png" width="450px" style="margin-left:0px"/> 
+
+<img src="/picture/result.png" width="500px" style="margin-left:0px"/>
 
 
-![](./picture/tables.png)
-
-
-
-![](./picture/commodity.png)
-
-![](./picture/result.png)
-
-此项目中使用zookeeper实现分布式锁作为应用层的锁，因此在数据库层面不需要增加隔离
 
 ### 3.5 测试数据与testfile
 
-**order json：** input-0.json input-1.json input-2.json
+**order json：** input-0.json, input-1.json, input-2.json，约2w条数据。
 
 **LockTest.java：** 用于测试zookeeper锁实现的正确性、可扩展性。
 
 
 
+## 4. 性能分析与优化
 
-### 3.6 分析latency与throughput
-**Latency:** 由于kafka的高性能，latency主要来自于Spark Streaming自身的流处理中，由于Spark Streaming采用batch的方式，并不是来一条处理一条的真实时处理(如Storm)，因此latency主要取决于process time以及batch interval，因此在这将latency视为单个Record处理的时间的平均值，可以通过Spark UI查看得到
+**分析latency与throughput**：
 
-**Throughtput:** 由于应用process time相对较长，因此单个Spark Receiver足以满足任务的吞吐量需求，因此主要瓶颈仍然在于process time
+- **Latency:** 由于kafka的高性能，latency主要来自于Spark Streaming自身的流处理中，由于Spark Streaming采用batch的方式，并不是来一条处理一条的真实时处理(如Storm)，因此latency主要取决于process time以及batch interval，因此在这将latency视为单个Record处理的时间的平均值，可以通过Spark UI查看得到。
+$$
+  latency ≈ 0.5 * Batch\ Interval + processtime
+  $$
+  
+- **Throughput:** 由于应用process time相对较长，因此单个Spark Receiver足以满足任务的吞吐量需求，因此主要瓶颈仍然在于process time。
 
-总结：优化重点在于减少**process time**
+- 总结：优化重点在于减少**process time**，所以优化需要进一步分析任务处理时间。
 
-## 4. Problems
+
+
+**按照不同的事务级别、锁实现、forceSync设置，采用控制变量法进行throughput的测试，处理2w条order：**
+
+| MySQL事务级别    | zookeeper lock实现 | forceSync | Throughput |
+| ---------------- | ------------------ | --------- | ---------- |
+| Read Uncommitted | 无                 |           | 250.0      |
+| Read Repeatable  | 无                 |           | 243.9      |
+| Read Uncommitted | 无                 | ✔         | 125        |
+| Read Repeatable  | 无                 | ✔         | 108.7      |
+| Read Uncommitted | commodity lock     | ✔         | 11.1       |
+| Read Uncommitted | commodity lock     |           | 139.1      |
+| Read Repeatable  | commodity lock     |           | 137        |
+| Read Repeatable  | 全局single lock    |           | 61         |
+| Read Uncommitted | 全局single lock    |           | 62.1       |
+| Read Uncommitted | 全局single lock    | ✔         | 19         |
+
+ps: 由于latency不好测量且取决于Batch Interval，对Spark应用来说并不追求精确到秒级别的latency，因此这里选择Throughput作为测试指标。
+
+ps2: 由于在开启forceSync模式下overhead主要来自于zookeeper的操作开销，数据库事务隔离级别影响可以忽略，因此仅测试了Read Repeatable。
+
+
+
+### 4.1 single lock with forceSync
+
+![](./picture/streaming3.png)
+
+![](./picture/streaming2.png)
+
+#### 分析
+由于对整个表加了锁，相当于每个订单都串行执行，因此虽然通过Spark启动多个Executor并行处理多个Task，却没有利用到并行，由于应用只会涉及到更新自己订单的商品，因此只要对每个商品单独加锁，在没有冲突的情况下就可以并行处理。
+
+------
+
+### 4.2 commodity lock with forceSync
+
+在前一个版本的基础上实现了对商品单独加锁
+
+#### 分析
+可以观察到Throughput反而降低，经过检查发现虽然加入商品锁之后各个任务之间可以并行，但由于任务处理时间大部分都是zookeeper的写入操作(包括create以及delete)，因此商品锁相较于单个全局锁多了几倍的overhead，throughput反而下降。
+
+以下是运行时间分析图，Throughput单位order/second，时间单位ms：
+
+![1562942948738](./picture/1.png)
+
+![1562944020513](./picture/2.png)
+
+可以看到在Single Lock模式下加锁解锁时间相对较短(加锁时间长是由于将线程等待时间也算进去了)，平均操作只占20-30ms，这点也可以从更新Tx的时间上得到验证，加锁解锁与更新Tx都相当于一个zookeeper写入操作，而在两种模式下更新Tx的时间都相当稳定为20-30ms。
+
+------
+
+### 4.3 Read Repeatable + commodity lock without forceSync
+
+在前一个版本的基础上配置zoo.cfg
+``` shell
+# your/path/tp/zookeeper/conf/zoo.cfg
+forceSync=no
+```
+这个参数的作用是强制将zookeeper的写入操作持久化并且保持顺序，因此如果有多个写入操作并发，后面的写入操作需要等待前面的写入forceSync完之后才能forceSync并且返回，造成latency增加。
+
+#### 分析
+
+![1562944020513](./picture/3.png)
+
+可以观察到**Throughput大幅度增加，tradeoff为zookeeper的可靠性降低**，如果一个节点崩溃重启可能无法从本地数据recover，但我们采用三台作为一个集群，如果只有一台崩溃可以从其他两台上恢复数据，因此可靠性仍然可以保证。
+
+------
+
+### 4.4 Read Uncommitted + commodity lock without forceSync
+
+将Mysql的事务隔离级别降到最低，因为我们已经在应用层实现了锁，因此不需要数据库层面为我们提供隔离。
+
+#### 分析
+
+![1562944020513](./picture/4.png)
+
+Throughput有一定提升但有限，因为数据库操作本身占用时间便不大，并且在我们的应用中将每一次读或写操作单独作为一个事务，因此事务之间的冲突本身就不多。
+
+
+
+#### 总结：经过4次比较，可知throughput优化最多的实现是：
+
+$$
+zookeeper全局single \ lock+zookeeper写入 without\ forcesync  + 数据库事务级别read \ uncommitted
+$$
+
+
+
+## 5. Problems
 
 **Q1: kafka-console-consumer.sh --zookeeper xxx 报错**
 
 A: 因为版本更新该参数改为--bootstrap-server，需要broker server而不是zookeeper server
 
-
-
 **Q2: zkServer.sh start后status显示not running**
 
 A: 可查看zookeeper.out文件
+
 ```shell
 org.apache.zookeeper.server.quorum.QuorumPeerConfig$ConfigException: Error processing /home/centos/soft/zk/bin/../conf/zoo.cfg
         at org.apache.zookeeper.server.quorum.QuorumPeerConfig.parse(QuorumPeerConfig.java:156)
@@ -453,12 +533,13 @@ Caused by: java.lang.IllegalArgumentException: /home/centos/zookeeper/data/myid 
         ... 2 more
 
 ```
+
 - 由于dataDir下的myid文件未创建
 - 若日志显示正常status却未显示，可能由于集群模式还未完成选举，等所有机器都启动后再查看
 
 **Q3: Field "id" doesn't have a default value**
 
-A: 由于使用hibernete将Result表的id列设置为```@GeneratedValue(strategy = GenerationType.IDENTITY)```因此自增属性交由Mysql管理，而生产环境下的Mysql未配置id为AUTO INCREMENT，因此报错，通过```alter table Result modify id int AUTO INCREMENT;```修改完毕，需要保证连接数据库的进程关闭，否则会卡死。
+A: 由于使用hibernete将Result表的id列设置为```@GeneratedValue(strategy = GenerationType.IDENTITY)```因此自增属性交由Mysql管理，而生产环境下的Mysql未配置id为AUTO INCREMENT，因此报错，通过```alter table Result modify id int AUTO INCREMENT;```修改完毕，需要保证连接数据库的进程关闭，否则会卡死
 
 **Q4: 发现spark应用消费速度过慢，只有个位数throughput**
 
@@ -466,98 +547,26 @@ A: 首先排查kafka本身吞吐量，通过kafka-producer-perf-test.sh测试发
 
 **Q5: Web请求处理速度过慢，throughput仅有十几**
 
-A: 由于之前在本机上发送订单请求，，怀疑由于Web Receiver瓶颈，因此将sender的python脚本进行打包，在集群上进行send，打算采用多个Receiver方式，然后发现服务器上send速度很快，因此问题为开发机至服务器间的网络
+A: 由于之前在本机上发送订单请求，怀疑由于Web Receiver瓶颈，因此将sender的python脚本进行打包，在集群上进行send，打算采用多个Receiver方式，然后发现服务器上send速度很快，因此问题为开发机至服务器间的网络
 
 **Q6: Zookeeper产生死锁**
 
-A：由于共享static变量， 多个worker/多线程拿锁产生问题，没有有效放锁。修改lockService类的实现，删去lockPath的static变量，并且每次zookeeper删除节点时都删除最小节点。
+A：由于共享static变量， 多个worker/多线程拿锁产生问题，没有有效放锁。修改lockService类的实现，删去lockPath的static变量，并且每次zookeeper删除节点时都删除最小节点
 
 **Q7: 在master节点上使用start-all.sh但Worker没有启动**
 
 A: 由于master默认采用主机名作为连接地址，而openstack主机名采用[实例名].novalocal的格式，因此Worker启动无法找到master而启动失败
 
-**Q8:**
 
-
-
-## 5. 性能分析
-
-由3.6分析可知，latency ~= 0.5 * Batch Interval + processtime,而throughput很大程度上依赖于processtime，优化主要需要分析任务处理时间
-
-2w条order
-</br>Read Uncommitted + no lock without        forceSync: 01:20  Throughtput: 250.0
-</br>Read Repeatable  + no lock without        forceSync: 01:22  Throughtput: 243.9
-</br>Read Uncommitted + no lock with           forceSync: 02:40  Throughtput: 125.0
-</br>Read Repeatable  + no lock with           forceSync: 03:04  Throughtput: 108.7
-</br>Read Uncommitted + commodity lock with    forceSync: 30~min Throughtput: 11.1
-</br>Read Uncommitted + commodity lock without forceSync: 02:28  Throughtput: 135.1
-</br>Read Repeatable  + commodity lock without forceSync: 02:26  Throughtput: 137.0
-</br>Read Uncommitted + single lock with       forceSync: 17:30  Throughtput: 19.0
-</br>Read Uncommitted + single lock without    forceSync: 05:22  Throughtput: 62.1
-</br>Read Repeatable  + single lock without    forceSync: 05:28  Throughtput: 61.0
-
-ps: 由于latency不好测量并且由于取决于Batch Interval，对Spark应用来说并不追求精确到秒级别的latency，因此这里选择Throughtput作为测试指标
-
-ps2: 由于在开启forceSync模式下overhead主要来自于zookeeper的操作开销，数据库事务隔离级别影响可以忽略，因此仅测试了Read Repeatable
-
-
-
-### 5.1 single lock with forceSync
-
-![](./picture/streaming3.png)
-
-![](./picture/streaming2.png)
-
-#### 分析
-由于对整个表加了锁，相当于每个订单都串行执行，因此虽然通过Spark启动多个Executor并行处理多个Task，却没有利用到并行，由于应用只会涉及到更新自己订单的商品，因此只要对每个商品单独加锁，在没有冲突的情况下就可以并行处理
-
-
-后面每个版本配一个和前面版本的对比图，一张柱状图两个柱这样子
-
-------
-
-### 5.2 commodity lock with forceSync
-
-在前一个版本的基础上实现了对商品单独加锁
-
-#### 分析
-可以观察到Throughput反而降低，经过检查发现虽然加入商品锁之后各个任务之间可以并行，但由于任务处理时间大部分都是zookeeper的写入操作(包括create以及delete)，因此商品锁相较于单个全局锁多了几倍的overhead，throughput反而下降
-
-这里是运行时间分析图
-
-可以看到在Single Lock模式下加锁解锁时间相对较短(加锁时间长是由于将线程等待时间也算进去了)，平均操作只占20-30ms，这点也可以从更新Tx的时间上得到验证，加锁解锁与更新Tx都相当于一个zookeeper写入操作，而在两种模式下更新Tx的时间都相当稳定为20-30ms
-
-------
-
-### 5.3 Read Repeatable + commodity lock without forceSync
-
-在前一个版本的基础上配置zoo.cfg
-``` shell
-# your/path/tp/zookeeper/conf/zoo.cfg
-forceSync=no
-```
-这个参数的作用是强制将zookeeper的写入操作持久化并且保持顺序，因此如果有多个写入操作并发，后面的写入操作需要等待前面的写入forceSync完之后才能forceSync并且返回，造成latency增加
-
-#### 分析
-可以观察到Thorughtput大幅度增加，tradeoff为zookeeper的可靠性降低，如果一个节点崩溃重启可能无法从本地数据recover，但我们采用三台作为一个集群，如果只有一台崩溃可以从其他两台上恢复数据，因此可靠性仍然可以保证
-
-------
-
-### 5.4 Read Uncommitted + commodity lock without forceSync
-
-将Mysql的事务隔离级别降到最低，因为我们已经在应用层实现了锁，因此不需要数据库层面为我们提供隔离
-
-#### 分析
-Throughtput有一定提升但有限，因为数据库操作本身占用时间便不大，并且在我们的应用中将每一次读或写操作单独作为一个事务，因此事务之间的冲突本身就不多
 
 ## 6. Contribution
 
 | 学号         | 姓名   | 分工 |
 | ------------ | ------ | ---- |
-| 516030910328 | 蔡忠玮 |      |
-| 516030910219 | 徐家辉 |      |
-| 516030910422 | 赵樱   | 水报告 |
-| 516030910367 | 应邦豪 |划水   |
+| 516030910328 | 蔡忠玮 | 环境搭建、Spark应用、testfile |
+| 516030910219 | 徐家辉 | zookeeper分布式锁、订单处理应用 |
+| 516030910422 | 赵樱   | Web应用 |
+| 516030910367 | 应邦豪 | 更改汇率应用 |
 
 
 
@@ -566,34 +575,23 @@ Throughtput有一定提升但有限，因为数据库操作本身占用时间便
 **项目结构及说明：**
 
 ```
-# 预期修改结果？
-├─Service
+├─Core
 │      CommodityService.java
 │      ResultService.java
 │      CurrentService.java		zookeeper管理汇率表
 │      LockService.java			zookeeper分布式锁实现
 │      Processor.java			订单处理
-│      HibernateUtil.java		数据库连接
-│      //ZooKeeperPool.java		never used
-│      //TestApp.java
-│
+│      HibernateUtil.java		数据库连接配置
 ├─Current						
 │      CurrentApp.java
 │      CurrentChange.java		继承thread，修改汇率的实现
-│  
 ├─Entity
 │      Commodity.java
 │      Result.java
-│
 ├─Spark
 │      SparkApp.java
-│      OrderProcessor.java
-│      OrderProducer.java
-│      //SimpleLock.java
-│      //SqlTest.java
-│      //WriteLock.java
-│      //Logger.java
-│
+│      OrderProcessor.java		测试使用
+│      OrderProducer.java		测试使用
 └─Web
        WebApp.java				kafka producer(发送订单、添加商品)
 ```
