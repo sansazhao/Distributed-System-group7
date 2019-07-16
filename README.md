@@ -418,8 +418,8 @@ public class CurrentChange extends Thread {
 - **Latency:** 由于kafka的高性能，latency主要来自于Spark Streaming自身的流处理中，由于Spark Streaming采用batch的方式，并不是来一条处理一条的真实时处理(如Storm)，因此latency主要取决于process time以及batch interval，因此在这将latency视为单个Record处理的时间的平均值，可以通过Spark UI查看得到。
 $$
   latency ≈ 0.5 * Batch\ Interval + processtime
-  $$
-  
+$$
+
 - **Throughput:** 由于应用process time相对较长，因此单个Spark Receiver足以满足任务的吞吐量需求，因此主要瓶颈仍然在于process time。
 
 - 总结：优化重点在于减少**process time**，所以优化需要进一步分析任务处理时间。
@@ -507,7 +507,7 @@ Throughput有一定提升但有限，因为数据库操作本身占用时间便�
 #### 总结：经过4次比较，可知throughput优化最多的实现是：
 
 $$
-zookeeper全局single \ lock+zookeeper写入 without\ forcesync  + 数据库事务级别read \ uncommitted
+zookeeper\ commodity \ lock+zookeeper without\ forcesync  + 数据库事务级别read \ uncommitted
 $$
 
 
